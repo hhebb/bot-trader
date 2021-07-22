@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton
 import sys
+from Application.Runner import Runner
 
 class MyApp(QWidget):
 
@@ -26,4 +27,6 @@ class MyApp(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = MyApp()
+    runner = Runner()
+    runner.Simulate()
     sys.exit(app.exec_())
