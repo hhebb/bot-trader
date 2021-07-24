@@ -12,6 +12,11 @@ class OrderBook:
         self.__LOB = snapshot
 
     def Update(self, data):
+        # data 갯수만큼 업데이트 적용
+        for d in data:
+            pass
+
+
         # 신규 호가는 append, 기존 호가는 change.
         self.__LOB[10000] = LimitOrder(10000, 10, 1)
         self.__LOB_list = list(self.__LOB)

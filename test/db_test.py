@@ -1,4 +1,5 @@
 import pymongo
+import datetime
 
 class DBManager:
     def __init__(self):
@@ -13,11 +14,16 @@ class DBManager:
 
     def GetData(self):
         # cursor 는 generator 혹은 iterator.
-        query = {'timestamp' : {'$gte' : 5}}
+        stamp = datetime.datetime.strptime('2021-07-24 14:21:54', '%Y-%m-%d %H:%M:%S')
+
+        query = {'timestamp' : {'$eq' : stamp}}
         result = self.collection.find(query)
         print(type(result))
         for res in result:
             print(res)
+            # stamp = res['timestamp']
+            # print(stamp.year, stamp. month, stamp.day, stamp.hour, stamp.minute, stamp.second)
+
 
     def Write(self):
         data = {

@@ -14,4 +14,4 @@ class DBManager:
     def GetNextRow(self, timestamp):
         query = {'timestamp':timestamp}
         cursor = self.__collection.find(query)
-        return 1
+        return list(cursor)

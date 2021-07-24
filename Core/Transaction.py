@@ -3,7 +3,12 @@ class Transaction:
         self.__max_size = 1000
         self.__history = list()
 
-    def Update(self):
+    def Update(self, data):
+        # data 갯수만큼 업데이트.
+        for d in data:
+            pass
+
+
         if len(self.__history) > self.__max_size:
             self.__history.pop(0)
 

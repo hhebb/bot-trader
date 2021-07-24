@@ -2,6 +2,7 @@ from Core.OrderBook import OrderBook
 from Core.Transaction import Transaction
 from Core.Ticker import Ticker
 from Core.DBManager import DBManager
+from Core.Parser import Parser
 
 class Market:
     def __init__(self):
@@ -10,6 +11,7 @@ class Market:
         self.__transaction = Transaction()
         self.__ticker = Ticker()
         self.__dbManager = DBManager()
+        self.__parser = Parser()
 
     def SetSnapShots(self):
         # for fill initial data. for adjust
@@ -18,8 +20,11 @@ class Market:
 
     def Step(self, timestamp):
         data = self.__dbManager.GetNextRow(timestamp) #
-        self.__LOB_bid.Update()
-        self.__LOB_ask.Update()
+        lob = self.__parser.ParseLOB()
+        trans = self.__parser.ParseTransaction()
+
+        self.__LOB_bid.Update() # lob
+        self.__LOB_ask.Update() # trans
         self.__transaction.Update()
         self.__ticker.Update()
         print('> step')
