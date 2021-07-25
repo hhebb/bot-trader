@@ -19,9 +19,8 @@ class Market:
         self.__LOB_bid.SetSnapshot()
 
     def Step(self, timestamp):
-        data = self.__dbManager.GetNextRow(timestamp) #
-        lob = self.__parser.ParseLOB()
-        trans = self.__parser.ParseTransaction()
+        data = self.__dbManager.GetRow(timestamp)
+        ask, bid, transaction, lobSnapshot, transactionSnapshot = self.__parser.Parse(data)
 
         self.__LOB_bid.Update() # lob
         self.__LOB_ask.Update() # trans

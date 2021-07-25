@@ -1,5 +1,6 @@
 import pymongo
 
+
 class DBManager:
     def __init__(self):
         self.__conn = None
@@ -11,7 +12,9 @@ class DBManager:
         self.__db = self.__conn.get_database(db)
         self.__collection = self.__db.get_collection(collection)
 
-    def GetNextRow(self, timestamp):
-        query = {'timestamp':timestamp}
-        cursor = self.__collection.find(query)
-        return list(cursor)
+    def GetRow(self, timestamp):
+        # find 는 cursor 반환. cursor 는 generator 혹은 iterator.
+        # find_one 은 dict 반환
+        query = {'timestamp': {'$eq': timestamp}}
+        result = self.__collection.find_one(query)
+        return result

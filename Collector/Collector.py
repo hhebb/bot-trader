@@ -21,6 +21,8 @@ class DBManager:
         # find_one 은 dict 반환
         query = {'timestamp' : {'$eq':timestamp}}
         result = self.collection.find_one(query)
+        # for res in result:
+        #     print(res, type(res))
         return result
 
     def WriteLOB(self, stamp, lob):
