@@ -3,6 +3,7 @@ import websockets
 import json
 import datetime
 import pymongo
+import requests
 
 class DBManager:
     def __init__(self):
@@ -36,6 +37,12 @@ class DBManager:
     def PushTransaction(self, stamp, transaction):
         self.collection.update_one({'timestamp': stamp}, {'$push': {'transaction': transaction}}, upsert=True)
 
+    def WriteLOBSnapshot(self, stamp, snapshot):
+        self.collection.update_one({'timestamp': stamp}, {'$set': {'snapshot_lob': snapshot}}, upsert=True)
+
+    def WriteTransactionSnapshot(self, stamp, snapshot):
+        self.collection.update_one({'timestamp': stamp}, {'$set': {'snapshot_transaction': snapshot}}, upsert=True)
+
     def Clear(self):
         self.collection.drop()
 
@@ -59,6 +66,11 @@ async def LOBSaver(manager):
         if status['status'] == '0000':
             pass
 
+        # initial stamp save.
+        now = datetime.datetime.now().replace(microsecond=0)
+        LOBSnapshotSaver(manager, now)
+        count = 0
+
         while True:
             # orderbook
             data = await websocket.recv()
@@ -73,22 +85,25 @@ async def LOBSaver(manager):
             if result is not None:
                 # document 가 이미 있으며 lob 가 이미 있을 땐 확장 후 update.
                 if 'lob' in result.keys():
-                    print('> lob, document exist, lob exist')
+                    # print('> lob, document exist, lob exist')
                     # result['lob'].extend(orderData)
                     # manager.WriteLOB(stamp, result['lob'])
                     manager.PushLOB(stamp, orderData)
                 # document 는 있는데 lob 가 없으면 field 만 update.
                 else:
-                    print('> lob, document exist')
+                    # print('> lob, document exist')
                     manager.WriteLOB(stamp, orderData)
             # document 가 없을 땐, 신규 생성 insert.
             else:
-                print('> lob, no document')
+                # print('> lob, no document')
                 manager.WriteLOB(stamp, orderData)
 
+            # snapshot save
+            if count % 5 == 0:
+                LOBSnapshotSaver(manager, stamp)
+                # print('> snapshot save')
 
-            # manager.Write(row)
-
+            count += 1
 
 async def TransactionSaver(manager):
     uri = "wss://pubwss.bithumb.com/pub/ws"
@@ -108,6 +123,11 @@ async def TransactionSaver(manager):
         status = json.loads(status)
         if status['status'] == '0000':
             pass
+
+        # initial stamp save.
+        now = datetime.datetime.now().replace(microsecond=0)
+        TransactionSnapshotSaver(manager, now)
+        count = 0
 
         while True:
             # transaction
@@ -131,24 +151,44 @@ async def TransactionSaver(manager):
                 result = manager.GetRow(stamp)
                 if result is not None:
                     if 'transaction' in result.keys():
-                        print('> trans, document exist, lob exist')
+                        # print('> trans, document exist, lob exist')
                         manager.PushTransaction(stamp, trans)
                     else:
-                        print('> trans, document exist')
+                        # print('> trans, document exist')
                         manager.WriteTransaction(stamp, trans)
                 else:
-                    print('> trans, no document')
+                    # print('> trans, no document')
                     manager.WriteTransaction(stamp, trans)
 
+            # snapshot save
+            if count % 5 == 0:
+                TransactionSnapshotSaver(manager, stamp)
+                # print('> transaction snapshot save', count)
+
+            # print(count)
+            count += 1
+
+def LOBSnapshotSaver(manager, stamp):
+    url = 'https://api.bithumb.com/public/orderbook/XRP_KRW'
+    params = {'count': 5}
+    result = requests.get(url=url, params=params)
+    j = result.json()
+    manager.WriteLOBSnapshot(stamp, j['data'])
+
+def TransactionSnapshotSaver(manager, stamp):
+    url = 'https://api.bithumb.com/public/transaction_history/XRP_KRW'
+    params = {'count': 5}
+    result = requests.get(url=url, params=params)
+    j = result.json()
+    manager.WriteTransactionSnapshot(stamp, j['data'])
 
 async def main():
     manager = DBManager()
     manager.Connect()
-    # await TransactionSaver(manager)
-    # await LOBSaver(manager)
+
+    # task 로 만들어서 event loop 에 한 번에 등록해도 됨.
     savers = [TransactionSaver(manager), LOBSaver(manager)]
     await asyncio.gather(*savers)
-
 
 
 asyncio.run(main())
