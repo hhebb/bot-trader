@@ -8,8 +8,10 @@ class Parser:
     def Parse(self, data):
         lob, transaction, lobSnapshot, transactionSnapshot = self.Splitter(data)
 
-        ask = list()
         bid = list()
+        ask = list()
+        bidSnapshot = list()
+        askSnapshot = list()
 
         for l in lob:
             if l['orderType'] == 'ask':
@@ -17,14 +19,18 @@ class Parser:
             else:
                 bid.append(l)
 
-        return ask, bid, transaction, lobSnapshot, transactionSnapshot
+        if lobSnapshot:
+            bidSnapshot = lobSnapshot[0]
+            askSnapshot = lobSnapshot[1]
+
+        return bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot
 
 
     def Splitter(self, data):
-        lob = None
-        transaction = None
+        lob = list()
+        transaction = list()
         lobSnapshot = None
-        transactionSnapshot = None
+        transactionSnapshot = list()
 
         if data is not None:
             if 'lob' in data:
@@ -33,11 +39,12 @@ class Parser:
                 transaction = data['transaction']
             if 'snapshot_lob' in data:
                 lobSnapshot = data['snapshot_lob']
-            if 'transaction' in data:
+            if 'snapshot_transaction' in data:
                 transactionSnapshot = data['snapshot_transaction']
 
         else:
-            print('> empty document')
+            # print('> empty document')
+            pass
 
         return lob, transaction, lobSnapshot, transactionSnapshot
 

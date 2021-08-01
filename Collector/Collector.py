@@ -151,8 +151,10 @@ async def TransactionSaver(manager):
                 result = manager.GetRow(stamp)
                 if result is not None:
                     if 'transaction' in result.keys():
-                        # print('> trans, document exist, lob exist')
-                        manager.PushTransaction(stamp, trans)
+                        # print('> trans, document exist, trans exist')
+                        # transaction 형태때문에 어쩔 수 없이 복잡해짐.
+                        for t in trans:
+                            manager.PushTransaction(stamp, t)
                     else:
                         # print('> trans, document exist')
                         manager.WriteTransaction(stamp, trans)
@@ -173,7 +175,7 @@ def LOBSnapshotSaver(manager, stamp):
     params = {'count': 5}
     result = requests.get(url=url, params=params)
     j = result.json()
-    manager.WriteLOBSnapshot(stamp, j['data'])
+    manager.WriteLOBSnapshot(stamp, [j['data']['bids'], j['data']['asks']])
 
 def TransactionSnapshotSaver(manager, stamp):
     url = 'https://api.bithumb.com/public/transaction_history/XRP_KRW'

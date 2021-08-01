@@ -6,6 +6,7 @@ class DBManager:
         self.__conn = None
         self.__db = None
         self.__collection = None
+        self.Connect()
 
     def Connect(self, ip='localhost', port=27017, db='test', collection='tmp'):
         self.__conn = pymongo.MongoClient(ip, port)

@@ -6,8 +6,8 @@ from Core.Parser import Parser
 
 class Market:
     def __init__(self):
-        self.__LOB_ask = OrderBook(1)
-        self.__LOB_bid = OrderBook(1)
+        self.__LOB_ask = OrderBook('ask')
+        self.__LOB_bid = OrderBook('bid')
         self.__transaction = Transaction()
         self.__ticker = Ticker()
         self.__dbManager = DBManager()
@@ -20,13 +20,28 @@ class Market:
 
     def Step(self, timestamp):
         data = self.__dbManager.GetRow(timestamp)
-        ask, bid, transaction, lobSnapshot, transactionSnapshot = self.__parser.Parse(data)
+        bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = self.__parser.Parse(data)
 
-        self.__LOB_bid.Update() # lob
-        self.__LOB_ask.Update() # trans
-        self.__transaction.Update()
-        self.__ticker.Update()
-        print('> step')
+        # lob. snapshot 이 있으면 바로 적용.
+        if bidSnapshot:
+            self.__LOB_bid.SetSnapshot(bidSnapshot)
+            self.__LOB_ask.SetSnapshot(askSnapshot)
+            print('> lob snapshot parse')
+        else:
+            self.__LOB_bid.Update(bid) # lob
+            self.__LOB_ask.Update(ask) # lob
+            # self.__ticker.Update()
+            print('> lob realtime parse')
+
+        # transaction. snapshot 이 있으면 바로 적용.
+        if transactionSnapshot:
+            self.__transaction.SetSnapshot(transactionSnapshot)
+            print('> transaction snapshot parse')
+        else:
+            self.__transaction.Update(transaction) # trans
+            print('> transaction realtime parse')
+
+        print('> step\n')
 
     def GetASK(self):
         return self.__LOB_ask
