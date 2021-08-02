@@ -1,32 +1,38 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QHBoxLayout, QVBoxLayout, QGridLayout
 import sys
 from Application.Runner import Runner
+from GUI.Widgets import *
 
 class MyApp(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.initUI()
+        self.InitUI()
 
-    def initUI(self):
-        label1 = QLabel('Label1', self)
-        label1.move(20, 20)
-        label2 = QLabel('Label2', self)
-        label2.move(20, 60)
+    def InitUI(self):
+        mainHbox = QHBoxLayout()
+        marketLayout = QVBoxLayout()
+        controlPanelLayout = QVBoxLayout()
 
-        btn1 = QPushButton('Button1', self)
-        btn1.move(80, 13)
-        btn2 = QPushButton('Button2', self)
-        btn2.move(80, 53)
+        mainHbox.addLayout(marketLayout)
+        mainHbox.addLayout(controlPanelLayout)
 
-        self.setWindowTitle('Absolute Positioning')
-        self.setGeometry(300, 300, 400, 200)
+        marketLayout.addWidget(TickerPanel())
+        marketLayout.addWidget(OrderPanel())
+
+        controlPanelLayout.addWidget(ControlPanel())
+        controlPanelLayout.addWidget(UserStatusPanel())
+
+        self.setLayout(mainHbox)
+
+        self.setWindowTitle('Box Layout')
+        self.setGeometry(300, 300, 300, 200)
         self.show()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = MyApp()
-    runner = Runner()
-    runner.Simulate()
+    # runner = Runner()
+    # runner.Simulate()
     sys.exit(app.exec_())
