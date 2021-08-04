@@ -15,7 +15,7 @@ class Transaction:
             amount = float(d['units_traded'])
             self.__history.append(MarketOrder(stamp, position, price, amount))
 
-        print(self.__history)
+        # print(self.__history)
 
     def Update(self, data: list):
         # data 갯수만큼 업데이트.
@@ -29,7 +29,7 @@ class Transaction:
         if len(self.__history) > self.__max_size:
             self.__history.pop(0)
 
-        print(self.__history)
+        # print(self.__history)
 
     def GetHistory(self):
         return self.__history

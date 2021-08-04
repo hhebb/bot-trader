@@ -26,22 +26,22 @@ class Market:
         if bidSnapshot:
             self.__LOB_bid.SetSnapshot(bidSnapshot)
             self.__LOB_ask.SetSnapshot(askSnapshot)
-            print('> lob snapshot parse')
+            # print('> lob snapshot parse')
         else:
             self.__LOB_bid.Update(bid) # lob
             self.__LOB_ask.Update(ask) # lob
             # self.__ticker.Update()
-            print('> lob realtime parse')
+            # print('> lob realtime parse')
 
         # transaction. snapshot 이 있으면 바로 적용.
         if transactionSnapshot:
             self.__transaction.SetSnapshot(transactionSnapshot)
-            print('> transaction snapshot parse')
+            # print('> transaction snapshot parse')
         else:
             self.__transaction.Update(transaction) # trans
-            print('> transaction realtime parse')
+            # print('> transaction realtime parse')
 
-        print('> step\n')
+        # print('> step\n')
 
     def GetASK(self):
         return self.__LOB_ask

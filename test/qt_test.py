@@ -8,8 +8,17 @@ class MyApp(QWidget):
     def __init__(self):
         super().__init__()
         self.InitUI()
+        self.runner = Runner()
+        self.market = self.runner.GetMarket()
+        self.runner.stepped.connect(self.Recv)
+        self.startButton.clicked.connect(self.clickedHandler)
+
+    def clickedHandler(self):
+        self.runner.Simulate()
+        print('click!!')
 
     def InitUI(self):
+        self.startButton = QPushButton('loop!', self)
         mainHbox = QHBoxLayout()
         marketLayout = QVBoxLayout()
         controlPanelLayout = QVBoxLayout()
@@ -18,7 +27,8 @@ class MyApp(QWidget):
         mainHbox.addLayout(controlPanelLayout)
 
         marketLayout.addWidget(TickerPanel())
-        marketLayout.addWidget(OrderPanel())
+        self.orderPanel = OrderPanel()
+        marketLayout.addWidget(self.orderPanel)
 
         controlPanelLayout.addWidget(ControlPanel())
         controlPanelLayout.addWidget(UserStatusPanel())
@@ -29,6 +39,10 @@ class MyApp(QWidget):
         self.setGeometry(300, 300, 300, 200)
         self.show()
 
+    def Recv(self, ask, bid, trans):
+        # print(ask, bid, trans)
+        print(ask.GetLOB())
+        self.orderPanel.orderbookWidget.Update(ask.GetLOB())
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

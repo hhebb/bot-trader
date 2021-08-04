@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame
-from PyQt5.QtCore import QRect
+from PyQt5.QtCore import QRect, pyqtSignal
 
 '''
 ticker, candle panel
@@ -43,7 +43,8 @@ class OrderPanel(QWidget):
 
     def InitUI(self):
         layout = QHBoxLayout()
-        layout.addWidget(OrderBookWidget())
+        self.orderbookWidget = OrderBookWidget()
+        layout.addWidget(self.orderbookWidget)
         layout.addWidget(TransactionWidget())
         self.setLayout(layout)
 
@@ -70,16 +71,39 @@ class OrderBookWidget(QFrame):
         # bidFrame.setObjectName('bid')
         askFrame.setStyleSheet(""" background-color: rgb(128, 128, 255); """)
         bidFrame.setStyleSheet(""" background-color: rgb(128, 128, 255); """)
-        askLayout = QVBoxLayout(askFrame)
-        bidLayout = QVBoxLayout(bidFrame)
+        self.askLayout = QVBoxLayout(askFrame)
+        self.bidLayout = QVBoxLayout(bidFrame)
 
         for i in range(5):
-            askLayout.addWidget(OrderItem(10, 1.0))
-            bidLayout.addWidget(OrderItem(10, 1.0))
+            self.askLayout.addWidget(OrderItem(10, 1.0))
+            self.bidLayout.addWidget(OrderItem(10, 1.0))
 
         layout.addWidget(askFrame)
         layout.addWidget(bidFrame)
         self.setLayout(layout)
+
+    def Update(self, data: dict):
+        for price, order in data.items():
+            # 기존에 없는 호가이면 추가.
+            targetItem = self.askLayout.findChild(OrderItem, str(price))
+            if not targetItem:
+                idx = self.FindInsertIndex(targetItem)
+                self.askLayout.insertWidget(idx, OrderItem(order.price, order.amount))
+            else:
+                idx = self.askLayout.indexOf(targetItem)
+                if order.amount == 0:
+                    targetItem.deleteLater()
+                else:
+                    targetItem.widget = OrderItem(order.price, order.amount)
+
+    def FindInsertIndex(self, p):
+        idx = 0
+        for i, w in enumerate(self.askLayout.children()):
+            if float(w.objectName()) > p:
+                idx = i
+                break
+
+        return idx
 
 
 class OrderItem(QFrame):
@@ -88,6 +112,7 @@ class OrderItem(QFrame):
         self.__price = price
         self.__amount = amount
         self.setFixedSize(100, 30)
+        self.setObjectName(str(price))
         self.InitUI()
 
     def InitUI(self):
@@ -108,25 +133,45 @@ class OrderItem(QFrame):
         # self.label = QLabel('test', self)
 
 
-class TransactionWidget(QWidget):
+class TransactionWidget(QFrame):
     def __init__(self):
         super().__init__()
+        self.setObjectName('root')
+        self.setStyleSheet(''' #root {background-color: rgb(45, 45, 45);}''')
         self.InitUI()
 
     def InitUI(self):
         b = QPushButton('transaction', self)
         layout = QVBoxLayout()
+        frame = QFrame()
+        frame.setStyleSheet(''' QFrame {background-color: rgb(128, 128, 255);} ''')
+        self.transactionLayout = QVBoxLayout(frame)
         for i in range(5):
-            layout.addWidget(TransactionItem('1:0:0', 100, 5))
+            self.transactionLayout.addWidget(TransactionItem('1:0:0', 100, 5))
+        layout.addWidget(frame)
         self.setLayout(layout)
 
-class TransactionItem(QWidget):
+    def Update(self, data: list):
+        for trans in data:
+            targetItem = self.transactionLayout.findChild('trans.timestamp')
+            if targetItem:
+                continue
+            else:
+                ts = trans.timestamp
+                type = trans.type
+                price = trans.price
+                amount = trans.amount
+                newItem = TransactionItem(ts, price, amount)
+                self.transactionLayout.addWidget(newItem)
+
+class TransactionItem(QFrame):
     def __init__(self, time, price, amount):
         super().__init__()
         self.__time = time
         self.__price = price
         self.__amount = amount
-
+        self.setObjectName('trans')
+        self.setStyleSheet(''' #trans {background-color: red;} ''')
         self.InitUI()
 
     def InitUI(self):

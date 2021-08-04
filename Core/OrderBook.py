@@ -16,7 +16,7 @@ class OrderBook:
             count = -1
             self.__LOB[price] = LimitOrder(price, amount, count)
 
-        print(self.__LOB)
+        # print(self.__LOB)
 
     def Update(self, data: list):
         # data 갯수만큼 업데이트 적용
@@ -44,7 +44,7 @@ class OrderBook:
                 # print('> new price')
 
         self.__LOB = dict(sorted(self.__LOB.items()))
-        print(self.__LOB)
+        # print(self.__LOB)
 
     def GetLOB(self):
         return self.__LOB
