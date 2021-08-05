@@ -50,6 +50,7 @@ class OrderPanel(QWidget):
 
 
 class OrderBookWidget(QFrame):
+    drawFinished = pyqtSignal(bool)
     def __init__(self):
         super().__init__()
         self.__orderItems = list()
@@ -75,35 +76,60 @@ class OrderBookWidget(QFrame):
         self.bidLayout = QVBoxLayout(bidFrame)
 
         for i in range(5):
-            self.askLayout.addWidget(OrderItem(10, 1.0))
-            self.bidLayout.addWidget(OrderItem(10, 1.0))
+            # self.askLayout.addWidget(OrderItem(10, 1.0))
+            # self.bidLayout.addWidget(OrderItem(10, 1.0))
+            pass
 
         layout.addWidget(askFrame)
         layout.addWidget(bidFrame)
         self.setLayout(layout)
 
     def Update(self, data: dict):
+        # print('> ui update', len(data))
         for price, order in data.items():
+            i, targetItem = self.FindItem(price)
+            # print(targetItem)
             # 기존에 없는 호가이면 추가.
-            targetItem = self.askLayout.findChild(OrderItem, str(price))
             if not targetItem:
-                idx = self.FindInsertIndex(targetItem)
-                self.askLayout.insertWidget(idx, OrderItem(order.price, order.amount))
+                idx = self.FindInsertIndex(str(price))
+                newItem = OrderItem(order.price, order.amount)
+                # print('insert index', idx)
+                self.askLayout.insertWidget(idx, newItem)
+                if self.askLayout.count() > 10:
+                    delete = self.askLayout.itemAt(self.askLayout.count()-1).widget()
+                    self.askLayout.removeWidget(delete)
             else:
                 idx = self.askLayout.indexOf(targetItem)
-                if order.amount == 0:
-                    targetItem.deleteLater()
+                # print('exist')
+                if order.amount == 0.0:
+                    # print('zero')
+                    self.askLayout.removeWidget(targetItem)
                 else:
-                    targetItem.widget = OrderItem(order.price, order.amount)
+                    # print('change', targetItem.amount, order.amount)
+                    # targetItem.widget = OrderItem(order.price, -100)
+                    self.ReplaceItem(i, order.price, order.amount)
+
+        self.drawFinished.emit(True)
 
     def FindInsertIndex(self, p):
         idx = 0
-        for i, w in enumerate(self.askLayout.children()):
-            if float(w.objectName()) > p:
-                idx = i
+        for i in range(self.askLayout.count()):
+            idx = i
+            w = self.askLayout.itemAt(i).widget()
+            if float(w.objectName()) >= float(p):
                 break
-
         return idx
+
+    def FindItem(self, p):
+        for i in range(self.askLayout.count()):
+            w = self.askLayout.itemAt(i).widget()
+            if float(w.objectName()) == float(p):
+                return i, w
+        return None, None
+
+    def ReplaceItem(self, i, price, amount):
+        self.askLayout.removeWidget(self.askLayout.itemAt(i).widget())
+        self.askLayout.insertWidget(i, OrderItem(price, amount))
 
 
 class OrderItem(QFrame):
@@ -111,6 +137,7 @@ class OrderItem(QFrame):
         super().__init__()
         self.__price = price
         self.__amount = amount
+        self.amount = amount
         self.setFixedSize(100, 30)
         self.setObjectName(str(price))
         self.InitUI()
@@ -119,7 +146,7 @@ class OrderItem(QFrame):
         layout = QHBoxLayout()
         layout.addWidget(QLabel(str(self.__price)))
         layout.addWidget(QLabel(str(self.__amount)))
-        self.setObjectName('test')
+        # self.setObjectName('test')
         self.setStyleSheet(''' #test {
                             background-color: red;
                             border-style: solid;
