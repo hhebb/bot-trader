@@ -4,7 +4,7 @@ from Application.Runner import RunnerThread
 from GUI.Widgets import *
 
 class MyApp(QWidget):
-
+    drawed = pyqtSignal(bool)
     def __init__(self):
         super().__init__()
         self.InitUI()
@@ -12,7 +12,8 @@ class MyApp(QWidget):
         self.market = self.runner.GetMarket()
         self.runner.stepped.connect(self.Recv)
         self.startButton.clicked.connect(self.clickedHandler)
-        self.orderPanel.orderbookWidget.drawFinished.connect(self.runner.SetReady)
+        # self.orderPanel.orderbookWidget.drawFinished.connect(self.runner.SetReady)
+        self.drawed.connect(self.runner.SetReady)
 
     def clickedHandler(self):
         self.runner.start()
@@ -44,7 +45,9 @@ class MyApp(QWidget):
     def Recv(self, ask, bid, trans):
         # print(ask, bid, trans)
         # print(ask.GetLOB())
-        self.orderPanel.orderbookWidget.Update(ask.GetLOB())
+        self.orderPanel.orderbookWidget.Update(ask.GetLOB(), bid.GetLOB())
+        self.orderPanel.transactionWidget.Update(trans.GetHistoryDiff())
+        self.drawed.emit(True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
