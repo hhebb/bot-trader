@@ -5,12 +5,31 @@ class Ticker:
         self.__ma5 = list()
         self.__ma20 = list()
         self.__ma60 = list()
+        self.__buffer = list()
+        self.__candleGap = 60
+        self.__timeBucket = 0
 
-    def Update(self):
-        candle = Candle(0, [0, 0, 0, 0])
-        volume = TradingVolume(0, 10)
-        self.__tick_chart.append(candle)
-        self.__volume_chart.append(volume)
+    def Update(self, transaction):
+        for trans in transaction:
+            self.__buffer.append(trans)
+
+        if len(self.__timeBucket) == self.__candleGap:
+            stamp = self.__buffer[0][0]
+            o, h, l, c = self.__buffer[0][1], \
+                         max(self.__buffer, key=lambda x: x[1]), \
+                         min(self.__buffer, key=lambda x: x[1]), \
+                         self.__buffer[-1][1]
+            totalVolume = self.CalcTotalVolume()
+
+            candle = Candle(stamp, [o, h, l, c])
+            volume = TradingVolume(stamp, totalVolume)
+            self.__tick_chart.append(candle)
+            self.__volume_chart.append(volume)
+
+            self.__buffer.clear()
+
+        self.__timeBucket += 1
+
 
     def GetTickChart(self):
         return self.__tick_chart
@@ -20,6 +39,12 @@ class Ticker:
 
     def GetMA5(self):
         return self.__ma5
+
+    def CalcTotalVolume(self):
+        vol = 0
+        for buf in self.__buffer:
+            vol += buf[2]
+        return vol
 
 
 class Candle:

@@ -6,11 +6,13 @@ from Core.Parser import Parser
 
 class Market:
     def __init__(self):
+        self.__dbManager = DBManager()
+        self.__pairSymbol = 0
+        self.__startTime = 0
         self.__LOB_ask = OrderBook('ask')
         self.__LOB_bid = OrderBook('bid')
         self.__transaction = Transaction()
         self.__ticker = Ticker()
-        self.__dbManager = DBManager()
         self.__parser = Parser()
 
     def SetSnapShots(self):
@@ -36,10 +38,15 @@ class Market:
         # transaction. snapshot 이 있으면 바로 적용.
         if transactionSnapshot:
             self.__transaction.SetSnapshot(transactionSnapshot)
+            self.__transaction.Update(transaction)  # trans
             # print('> transaction snapshot parse')
         else:
-            self.__transaction.Update(transaction) # trans
-            # print('> transaction realtime parse')
+            self.__transaction.Update(transaction)  # trans
+            self.__transaction.UnSet()
+
+        # print('> transaction', self.GetTransaction().GetHistoryDiff())
+
+        # self.__ticker.Update(self.GetTransaction().GetHistoryDiff())
 
         # print('> step\n')
 

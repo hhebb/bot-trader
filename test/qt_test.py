@@ -46,7 +46,7 @@ class MyApp(QWidget):
         # print(ask, bid, trans)
         # print(ask.GetLOB())
         self.orderPanel.orderbookWidget.Update(ask.GetLOB(), bid.GetLOB())
-        self.orderPanel.transactionWidget.Update(trans.GetHistoryDiff())
+        self.orderPanel.transactionWidget.Update(trans.GetHistory(), trans.GetIsReset())
         self.drawed.emit(True)
 
 if __name__ == '__main__':

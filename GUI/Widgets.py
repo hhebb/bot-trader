@@ -179,25 +179,34 @@ class TransactionWidget(QFrame):
 
     def InitUI(self):
         b = QPushButton('transaction', self)
-        self.transLayout = QVBoxLayout()
+        self.transLayout = QVBoxLayout() # just container
         frame = QFrame()
         frame.setStyleSheet(''' QFrame {background-color: rgb(128, 128, 255);} ''')
-        self.transactionLayout = QVBoxLayout(frame)
+        self.transactionLayout = QVBoxLayout(frame) # contain transaction
         self.transLayout.addWidget(frame)
         self.setLayout(self.transLayout)
 
-    def Update(self, data: list):
+    def Update(self, data: list, reset: bool):
+        if reset:
+            self.ResetWidgets()
+
         for trans in data:
+            if self.FindItem(trans.order):
+                continue
+            # print(trans.order, trans.timestamp)
+
             stamp = str(trans.timestamp)
             price = str(trans.price)
             amount = str(trans.amount)
-            w = TransactionItem(stamp, price, amount)
-            print(stamp)
-            self.transLayout.insertWidget(self.transactionLayout.count(), w)
+            order = str(trans.order)
+            w = TransactionItem(stamp, price, amount, order)
+            # print(stamp, order)
+            self.transactionLayout.insertWidget(self.transactionLayout.count(), w)
 
-            if self.transLayout.count() > 10:
-                toRemove = self.transLayout.itemAt(0)
-                self.transLayout.removeWidget(toRemove.widget())
+            if self.transactionLayout.count() > 10:
+                toRemove = self.transactionLayout.itemAt(0)
+                # print('> remove: ', toRemove.widget().objectName())
+                self.transactionLayout.removeWidget(toRemove.widget())
 
             ##############
             # if not self.FindItem(trans.timestamp):
@@ -212,20 +221,25 @@ class TransactionWidget(QFrame):
                 #     toRemove = self.transLayout.itemAt(0)
                 #     self.transLayout.removeWidget(toRemove.widget())
 
-    def FindItem(self, stamp):
-        for i in range(self.transLayout.count()):
-            if self.transLayout.itemAt(i).widget().objectName() == str(stamp):
+    def FindItem(self, order):
+        for i in range(self.transactionLayout.count()):
+            if self.transactionLayout.itemAt(i).widget().objectName() == str(order):
                 return True
 
         return False
 
+    def ResetWidgets(self):
+        for i in range(self.transactionLayout.count()):
+            self.transactionLayout.removeWidget(self.transactionLayout.itemAt(0).widget())
+            pass
+
 class TransactionItem(QFrame):
-    def __init__(self, time, price, amount):
+    def __init__(self, time, price, amount, order):
         super().__init__()
         self.__time = time
         self.__price = price
         self.__amount = amount
-        self.setObjectName(price)
+        self.setObjectName(order)
         # self.setStyleSheet(''' #trans {background-color: red;} ''')
         self.InitUI()
 
