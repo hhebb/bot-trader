@@ -9,7 +9,7 @@ class Agent:
         self.__winRate = 0
 
     def UpdataStatus(self, market):
-        print("i'm agent")
+        # print("i'm agent")
         for k, v in self.__balance.items():
             # 현재 가격을 받아서 balance 변화, asset 변화
             pass

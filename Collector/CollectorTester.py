@@ -186,8 +186,7 @@ def TransactionSnapshotSaver(manager, stamp):
 
 async def main():
     manager = DBManager()
-    now = str(datetime.datetime.now().replace(microsecond=0))
-    manager.Connect('data', now)
+    manager.Connect('test', 'tmp')
 
     # task 로 만들어서 event loop 에 한 번에 등록해도 됨.
     savers = [TransactionSaver(manager), LOBSaver(manager)]

@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFrame
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame
 from PyQt5.QtCore import QRect, pyqtSignal
 
 '''
@@ -272,4 +272,21 @@ class UserStatusPanel(QWidget):
         self.InitUI()
 
     def InitUI(self):
-        b = QPushButton('user', self)
+        # b = QPushButton('user', self)
+        self.outer = QVBoxLayout()
+        frame = QFrame()
+        self.outer.addWidget(frame)
+        self.userLayout = QFormLayout(frame)
+
+        # labels
+        self.nameWidget = QLabel('name')
+        self.initialAsset = QLabel('initial')
+
+        # fields
+        self.name = QLabel('minsu')
+        self.initAsset = QLabel('10000 KRW')
+
+        self.userLayout.addRow(self.nameWidget, self.name)
+        self.userLayout.addRow(self.initialAsset, self.initAsset)
+
+        self.setLayout(self.outer)

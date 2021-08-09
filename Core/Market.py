@@ -6,7 +6,7 @@ from Core.Parser import Parser
 
 class Market:
     def __init__(self):
-        self.__dbManager = DBManager()
+        self.dbManager = DBManager()
         self.__pairSymbol = 0
         self.__startTime = 0
         self.__LOB_ask = OrderBook('ask')
@@ -21,7 +21,7 @@ class Market:
         self.__LOB_bid.SetSnapshot()
 
     def Step(self, timestamp):
-        data = self.__dbManager.GetRow(timestamp)
+        data = self.dbManager.GetRow(timestamp)
         bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = self.__parser.Parse(data)
 
         # lob. snapshot 이 있으면 바로 적용.
