@@ -73,7 +73,18 @@ async def LOBSaver(manager):
 
         while True:
             # orderbook
-            data = await websocket.recv()
+            try:
+                data = await websocket.recv()
+            except:
+                websocket = await websockets.connect(uri, ping_interval=None)
+                await websocket.send(subscribe_data)
+                status = await websocket.recv()
+                print('> LOB saver re-connected')
+                status = json.loads(status)
+                if status['status'] == '0000':
+                    pass
+                data = await websocket.recv()
+
             data = json.loads(data)
             stamp = float(data['content']['datetime'][:-6])
             stamp = datetime.datetime.fromtimestamp(stamp)
@@ -99,7 +110,7 @@ async def LOBSaver(manager):
                 manager.WriteLOB(stamp, orderData)
 
             # snapshot save
-            if count % 5 == 0:
+            if count % 100 == 0:
                 LOBSnapshotSaver(manager, stamp)
                 # print('> snapshot save')
 
@@ -131,7 +142,18 @@ async def TransactionSaver(manager):
 
         while True:
             # transaction
-            data = await websocket.recv()
+            try:
+                data = await websocket.recv()
+            except:
+                websocket = await websockets.connect(uri, ping_interval=None)
+                await websocket.send(subscribe_data)
+                status = await websocket.recv()
+                print('> Transaction saver re-connected')
+                status = json.loads(status)
+                if status['status'] == '0000':
+                    pass
+                data = await websocket.recv()
+
             data = json.loads(data)
             transactionData = data['content']['list']
 
@@ -163,7 +185,7 @@ async def TransactionSaver(manager):
                     manager.WriteTransaction(stamp, trans)
 
             # snapshot save
-            if count % 5 == 0:
+            if count % 100 == 0:
                 TransactionSnapshotSaver(manager, stamp)
                 # print('> transaction snapshot save', count)
 
@@ -186,7 +208,7 @@ def TransactionSnapshotSaver(manager, stamp):
 
 async def main():
     manager = DBManager()
-    manager.Connect('test', 'tmp')
+    manager.Connect('test', 'tmp2')
 
     # task 로 만들어서 event loop 에 한 번에 등록해도 됨.
     savers = [TransactionSaver(manager), LOBSaver(manager)]
