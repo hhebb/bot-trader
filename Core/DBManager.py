@@ -9,14 +9,14 @@ class DBManager:
         self.__collection = None
         self.pair = None
         self.timestamp = None
-        self.Connect()
+        # self.Connect()
 
     def Connect(self, ip='localhost', port=27017, db='test', collection='tmp'):
         self.__conn = pymongo.MongoClient(ip, port)
         self.__db = self.__conn.get_database(db)
         self.__collection = self.__db.get_collection(collection)
-        if db == 'data':
-            self.pair, self.timestamp = self.__collection.name.split('_')
+        # if db == 'data':
+        #     self.pair, self.timestamp = self.__collection.name.split('_')
 
     def GetRow(self, timestamp):
         # find 는 cursor 반환. cursor 는 generator 혹은 iterator.

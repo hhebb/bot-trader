@@ -11,7 +11,8 @@ class RunnerThread(QThread):
         super().__init__()
         self.__market = Market()
         self.__agent = Agent(100)
-        self.__timestamp = datetime.datetime.strptime('2021-08-07 15:56:49', '%Y-%m-%d %H:%M:%S')
+        self.__timestamp = datetime.datetime.strptime('2021-08-22 15:24:13', '%Y-%m-%d %H:%M:%S')
+        self.__market.dbManager.Connect(db='data', collection=str(self.__timestamp))
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
         # self.__pair = self.__market.dbManager.pair
         # self.__timestamp = datetime.datetime.strptime(self.__market.dbManager.timestamp, '%Y-%m-%d %H:%M:%S')

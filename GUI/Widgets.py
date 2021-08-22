@@ -81,7 +81,7 @@ class OrderBookWidget(QFrame):
         self.setLayout(layout)
 
     def Update(self, askData: dict, bidData: dict):
-        # print('> ui update', len(data))
+        # print('> ui update', bidData)
         for price, order in askData.items():
             i, targetItem = self.FindItem(price)
             # print(targetItem)
