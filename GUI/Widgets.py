@@ -80,6 +80,32 @@ class OrderBookWidget(QFrame):
         layout.addWidget(bidFrame)
         self.setLayout(layout)
 
+    def Draw(self, askData: dict, bidData: dict):
+        # clear
+        for i in reversed(range(self.askLayout.count())):
+            rm = self.askLayout.itemAt(i).widget()
+            self.askLayout.removeWidget(rm)
+            rm.setParent(None)
+
+        # clear
+        for i in reversed(range(self.bidLayout.count())):
+            rm = self.bidLayout.itemAt(i).widget()
+            self.bidLayout.removeWidget(rm)
+            rm.setParent(None)
+
+        for price, order in askData.items():
+            if self.askLayout.count() >= 5:
+                break
+            item = OrderItem(order.price, order.amount)
+            self.askLayout.addWidget(item)
+
+        for price, order in bidData.items():
+            if self.bidLayout.count() >= 5:
+                break
+            item = OrderItem(order.price, order.amount)
+            self.bidLayout.addWidget(item)
+
+    # deprecated!
     def Update(self, askData: dict, bidData: dict):
         # print('> ui update', bidData)
         for price, order in askData.items():
@@ -186,6 +212,24 @@ class TransactionWidget(QFrame):
         self.transLayout.addWidget(frame)
         self.setLayout(self.transLayout)
 
+    def Draw(self, data: list):
+        # remove
+        for i in reversed(range(self.transactionLayout.count())):
+            rm = self.transactionLayout.itemAt(i).widget()
+            self.transactionLayout.removeWidget(rm)
+            rm.setParent(None)
+
+        for trans in data:
+            if self.transactionLayout.count() >= 10:
+                break
+            stamp = str(trans.timestamp)
+            price = str(trans.price)
+            amount = str(trans.amount)
+            order = str(trans.order)
+            w = TransactionItem(stamp, price, amount, order)
+            self.transactionLayout.addWidget(w)
+
+    # deprecated
     def Update(self, data: list, reset: bool):
         if reset:
             self.ResetWidgets()

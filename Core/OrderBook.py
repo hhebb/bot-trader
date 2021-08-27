@@ -46,7 +46,7 @@ class OrderBook:
         self.__LOB = dict(sorted(self.__LOB.items()))
         # print(self.__LOB)
 
-    def GetLOB(self):
+    def GetLOB(self) -> dict:
         return self.__LOB
 
 

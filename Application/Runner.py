@@ -26,7 +26,7 @@ class RunnerThread(QThread):
 
         while self.step < 180:
             tmp = 0
-            time.sleep(.15)
+            time.sleep(.5)
             while not self.ready:
                 tmp += 1
                 # print('', end=' ')

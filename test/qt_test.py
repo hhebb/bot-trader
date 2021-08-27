@@ -42,11 +42,14 @@ class MyApp(QWidget):
         self.show()
 
 
+    # slot
     def Recv(self, ask, bid, trans):
         # print(ask, bid, trans)
         # print(ask.GetLOB())
-        self.orderPanel.orderbookWidget.Update(ask.GetLOB(), bid.GetLOB())
-        self.orderPanel.transactionWidget.Update(trans.GetHistory(), trans.GetIsReset())
+        # self.orderPanel.orderbookWidget.Update(ask.GetLOB(), bid.GetLOB())
+        self.orderPanel.orderbookWidget.Draw(ask.GetLOB(), bid.GetLOB())
+        # self.orderPanel.transactionWidget.Update(trans.GetHistory(), trans.GetIsReset())
+        self.orderPanel.transactionWidget.Draw(trans.GetHistory())
         self.drawed.emit(True)
 
 if __name__ == '__main__':
