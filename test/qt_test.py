@@ -2,9 +2,12 @@ from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QHBoxLay
 import sys
 from Application.Runner import RunnerThread
 from GUI.Widgets import *
+from PyQt5 import QtGui
+from PyQt5.QtCore import Qt
 
 class MyApp(QWidget):
     drawed = pyqtSignal(bool)
+    stepRequest = pyqtSignal(bool)
     def __init__(self):
         super().__init__()
         self.InitUI()
@@ -14,6 +17,7 @@ class MyApp(QWidget):
         self.startButton.clicked.connect(self.clickedHandler)
         # self.orderPanel.orderbookWidget.drawFinished.connect(self.runner.SetReady)
         self.drawed.connect(self.runner.SetReady)
+        self.stepRequest.connect(self.runner.SetReady)
 
     def clickedHandler(self):
         self.runner.start()
@@ -42,7 +46,7 @@ class MyApp(QWidget):
         self.show()
 
 
-    # slot
+    # slot. step by synchronized signal.
     def Recv(self, ask, bid, trans):
         # print(ask, bid, trans)
         # print(ask.GetLOB())
@@ -50,7 +54,12 @@ class MyApp(QWidget):
         self.orderPanel.orderbookWidget.Draw(ask.GetLOB(), bid.GetLOB())
         # self.orderPanel.transactionWidget.Update(trans.GetHistory(), trans.GetIsReset())
         self.orderPanel.transactionWidget.Draw(trans.GetHistory())
-        self.drawed.emit(True)
+        # self.drawed.emit(True)
+
+    # step by manual control
+    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        if e.key() == Qt.Key_S:
+            self.stepRequest.emit(True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

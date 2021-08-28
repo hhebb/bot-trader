@@ -29,6 +29,7 @@ class Market:
             self.__LOB_bid.SetSnapshot(bidSnapshot)
             self.__LOB_ask.SetSnapshot(askSnapshot)
             # print('> lob snapshot parse')
+            pass
         else:
             self.__LOB_bid.Update(bid) # lob
             self.__LOB_ask.Update(ask) # lob
@@ -40,6 +41,7 @@ class Market:
             self.__transaction.SetSnapshot(transactionSnapshot)
             self.__transaction.Update(transaction)  # trans
             # print('> transaction snapshot parse')
+            pass
         else:
             self.__transaction.Update(transaction)  # trans
             self.__transaction.UnSet()

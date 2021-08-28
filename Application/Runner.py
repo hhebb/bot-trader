@@ -26,7 +26,7 @@ class RunnerThread(QThread):
 
         while self.step < 180:
             tmp = 0
-            time.sleep(.5)
+            time.sleep(.1)
             while not self.ready:
                 tmp += 1
                 # print('', end=' ')
@@ -45,7 +45,7 @@ class RunnerThread(QThread):
             self.ready = False
 
             # agent act
-            self.__agent.UpdataStatus(self.__market)
+            # self.__agent.UpdataStatus(self.__market)
 
         self.step = 0
 
