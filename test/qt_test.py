@@ -20,8 +20,8 @@ class MyApp(QWidget):
         self.stepRequest.connect(self.runner.SetReady)
 
     def clickedHandler(self):
+        # thread intial start.
         self.runner.start()
-        # print('click!!')
 
     def InitUI(self):
         self.startButton = QPushButton('loop!', self)

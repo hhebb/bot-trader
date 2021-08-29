@@ -10,7 +10,7 @@ class RunnerThread(QThread):
     def __init__(self):
         super().__init__()
         self.__market = Market()
-        self.__agent = Agent(100)
+        self.__agent = Agent(10000)
         self.__timestamp = datetime.datetime.strptime('2021-08-22 15:24:13', '%Y-%m-%d %H:%M:%S')
         self.__market.dbManager.Connect(db='data', collection=str(self.__timestamp))
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
@@ -44,9 +44,16 @@ class RunnerThread(QThread):
             # QThread.sleep(2)
             self.ready = False
 
-            # agent act
-            # self.__agent.UpdataStatus(self.__market)
-
+            # 시장가 get
+            primeAskKey = list(ask.GetLOB().keys())[0]
+            askPrice = ask.GetLOB()[primeAskKey].price #->LimitOrder, order[amount], order[count]
+            primeBidKey = list(bid.GetLOB().keys())[-1]
+            bidPrice = bid.GetLOB()[primeBidKey].price #->LimitOrder, order[amount], order[count]
+            self.__agent.Buy(pair='xrp', price=askPrice, amount=1)
+            self.__agent.Sell(pair='xrp', price=bidPrice, amount=2)
+            print(self.__agent.GetOrders())
+            self.__agent.Transact(ask=ask, bid=bid)
+            print(self.__agent.GetLedger())
         self.step = 0
 
     def SetReady(self, ready):
