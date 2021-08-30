@@ -1,6 +1,10 @@
 import datetime
 
 class Transaction:
+    '''
+        history: [MarketOrder, ...]
+        MarketOrder: type, price, amount, order
+    '''
     def __init__(self):
         self.__max_size = 1000
         self.__history = list()

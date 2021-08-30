@@ -14,6 +14,7 @@ class MyApp(QWidget):
         self.runner = RunnerThread()
         self.market = self.runner.GetMarket()
         self.runner.stepped.connect(self.Recv)
+        self.runner.agentInfoSignal.connect(self.RecvAgentInfo)
         self.startButton.clicked.connect(self.clickedHandler)
         # self.orderPanel.orderbookWidget.drawFinished.connect(self.runner.SetReady)
         self.drawed.connect(self.runner.SetReady)
@@ -36,8 +37,10 @@ class MyApp(QWidget):
         self.orderPanel = OrderPanel()
         marketLayout.addWidget(self.orderPanel)
 
-        controlPanelLayout.addWidget(ControlPanel())
-        controlPanelLayout.addWidget(UserStatusPanel())
+        self.controlPanel = ControlPanel()
+        self.userStatusPanel = UserStatusPanel()
+        controlPanelLayout.addWidget(self.controlPanel)
+        controlPanelLayout.addWidget(self.userStatusPanel)
 
         self.setLayout(mainHbox)
 
@@ -55,6 +58,9 @@ class MyApp(QWidget):
         # self.orderPanel.transactionWidget.Update(trans.GetHistory(), trans.GetIsReset())
         self.orderPanel.transactionWidget.Draw(trans.GetHistory())
         # self.drawed.emit(True)
+
+    def RecvAgentInfo(self, initAsset, totalAsset, ledger):
+        self.userStatusPanel.Recv(initAsset, totalAsset, ledger)
 
     # step by manual control
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:

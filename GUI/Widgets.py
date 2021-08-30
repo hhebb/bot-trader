@@ -300,6 +300,7 @@ user data, control panel
 class ControlPanel(QWidget):
     '''
         simulation speed, layout set..
+        수동 진행, 자동 진행 switch.
     '''
 
     def __init__(self):
@@ -323,14 +324,26 @@ class UserStatusPanel(QWidget):
         self.userLayout = QFormLayout(frame)
 
         # labels
-        self.nameWidget = QLabel('name')
-        self.initialAsset = QLabel('initial')
+        self.nameLabel = QLabel('name')
+        self.initialAssetLabel = QLabel('initial asset')
+        self.totalAssetLabel = QLabel('total asset')
+        self.netProfitLabel = QLabel('net profit')
 
         # fields
         self.name = QLabel('minsu')
-        self.initAsset = QLabel('10000 KRW')
+        self.initAsset = QLabel('')
+        self.totalAsset = QLabel('')
+        self.netProfit = QLabel('')
 
-        self.userLayout.addRow(self.nameWidget, self.name)
-        self.userLayout.addRow(self.initialAsset, self.initAsset)
+        self.userLayout.addRow(self.nameLabel, self.name)
+        self.userLayout.addRow(self.initialAssetLabel, self.initAsset)
+        self.userLayout.addRow(self.totalAssetLabel, self.totalAsset)
+        self.userLayout.addRow(self.netProfitLabel, self.netProfit)
 
         self.setLayout(self.outer)
+
+    def Recv(self, initAsset, totalAsset, ledger):
+        self.initAsset.setText((str(initAsset)))
+        self.totalAsset.setText(str(totalAsset))
+        self.netProfit.setText(str(float(totalAsset) - float(self.initAsset.text())))
+

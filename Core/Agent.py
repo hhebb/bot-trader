@@ -6,7 +6,8 @@ class Agent:
         ledger: {pair: amount, ...}
         orders: {id: {pair: '', position: '', price: '', amount: ''}, ...}
         history: [{pair: '', position: '', price: '', amount: ''}, ...]
-
+        
+        필요한거 - *총자산평가, -승률, 순이익, 잔고(현금, 주식 별로)
     '''
     def __init__(self, asset):
         self.__ledger = defaultdict(float)
@@ -27,25 +28,6 @@ class Agent:
         self.__history = list()
         self.__tradeCount = 0
 
-    # def UpdateLedger(self, pair: str, price: float, amount: float, status: int):
-    #     # ledger[pair][price] = {amount, status}. 무조건 실행. 조건 안걸리면 넘어감.
-    #     if pair not in self.__ledger:
-    #         self.__ledger[pair] = dict()
-    #         if price not in self.__ledger[pair]:
-    #             self.__ledger[pair][price] = dict()
-    #     else:
-    #         if price not in self.__ledger[pair]:
-    #             self.__ledger[pair][price] = dict()
-    #         else:
-    #             pass
-    #
-    #     self.__ledger[pair][price] = {'amount': amount, 'status': status}
-    #
-    #     # buy 로 인해 주문이 생기면 반드시 그만큼 fiat 를 빼야함.
-    #     if amount > 0:
-    #         self.__ledger['fiat'][FIAT_PRICE]['amount'] -= price * amount
-
-
     def AppendHistory(self, pair: str, position: int, price: float, amount: float):
         item = {'pair': pair, 'position': position, 'price': price, 'amount': amount}
         self.__history.append(item)
@@ -54,25 +36,40 @@ class Agent:
         pass
 
     def Sell(self, pair: str, price: float, amount: float):
-        # 팔 때는 order 에만 변화가 일어남. 주문만 들어간 상태로, 체결은 다음 틱부터 가능.
+        # 팔 때. ledger 주식 차감, order 추가. 주문만 들어간 상태로, 체결은 다음 틱부터 가능.
+        print(self.__ledger[pair], amount)
+        if self.__ledger[pair] < amount:
+            return
         order = {'pair': pair, 'position': EPostion.SELL, 'price': price, 'amount': amount}
         self.__ledger[pair] -= amount
         self.__orders[self.__orderId] = order
         self.__orderId += 1
 
     def Buy(self, pair: str, price: float, amount: float):
-        # 살 때는 ledger[fiat], order 에만 변화가 일어남. 주문만 들어간 상태로, 체결은 다음 틱부터 가능.
+        # 살 때. ledger 현금 차감, order 추가. 주문만 들어간 상태로, 체결은 다음 틱부터 가능.
+        if self.__ledger['fiat'] < price * amount:
+            return
         order = {'pair': pair, 'position': EPostion.BUY, 'price': price, 'amount': amount}
         self.__ledger['fiat'] -= price * amount
         self.__orders[self.__orderId] = order
         self.__orderId += 1
 
-    def Cancle(self, pair: str, price: float):
-        # 취소 주문. 해당 ledger 걍 삭제. 현금 복원.
-        _amount = self.__ledger[pair][price]['amount']
-        _price = self.__ledger[pair][price]['price']
-        del self.__ledger[pair][price]
-        self.__ledger['fiat'][FIAT_PRICE] += _amount * _price
+    def Cancle(self, orderId: int):
+        # 취소 주문. ledger 복원. order 삭제.
+        order = self.__orders[orderId]
+        pair = order['pair']
+        amount = order['amount']
+        price = order['price']
+        position = order['position']
+
+        if position == EPostion.BUY:
+            # buy 주문 취소할 때 현금 복원
+            self.__ledger[pair] += price * amount
+        else:
+            # sell 주문 취소할 때 수량 복원
+            self.__ledger[pair] += amount
+
+        del self.__orders[orderId]
 
     def Transact(self, ask, bid):
         # 체결되는 조건 - 시장가 범위 내에 위치 + 주문 가격에 잔량 존재.
@@ -84,15 +81,15 @@ class Agent:
             price = order['price']
             amount = order['amount']
             if order['position'] == EPostion.BUY:
-                # buy 체결될 때. ledger 추가. history 추가.
-                if price in ask.keys():
+                # buy 체결될 때. ledger 주식 추가. order 삭제. history 추가. 체결 조건.
+                if price in ask.keys() or price < min(ask.keys()):
                     if ask[price].amount >= amount:
                         self.__ledger[order['pair']] += amount
                         self.__history.append(order)
                         toRemove.append(orderId)
             elif order['position'] == EPostion.SELL:
-                # sell 체결될 때. 체결된 만큼 현금으로 돌아옴. history 추가.
-                if price in bid.keys():
+                # sell 체결될 때. ledger 현금 추가. order 삭제. history 추가. 체결 조건.
+                if price in bid.keys() or price > max(bid.keys()):
                     if bid[price].amount >= amount:
                         self.__ledger['fiat'] += price * amount
                         self.__history.append(order)
@@ -117,6 +114,8 @@ class Agent:
 
         return totalAsset
 
+    def GetInitAsset(self):
+        return self.__initialAsset
 
     def GetFiat(self) -> dict:
         # {amount, status}

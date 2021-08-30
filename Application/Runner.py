@@ -6,6 +6,7 @@ import time
 
 class RunnerThread(QThread):
     stepped = pyqtSignal(object, object, object)
+    agentInfoSignal = pyqtSignal(object, object, object)
 
     def __init__(self):
         super().__init__()
@@ -51,9 +52,12 @@ class RunnerThread(QThread):
             bidPrice = bid.GetLOB()[primeBidKey].price #->LimitOrder, order[amount], order[count]
             self.__agent.Buy(pair='xrp', price=askPrice, amount=1)
             self.__agent.Sell(pair='xrp', price=bidPrice, amount=2)
-            print(self.__agent.GetOrders())
             self.__agent.Transact(ask=ask, bid=bid)
-            print(self.__agent.GetLedger())
+            marketPrice = trans.GetHistory()[-1].price
+            print(self.__agent.GetEvaluation({'xrp': marketPrice}))
+            evaluation = self.__agent.GetEvaluation({'xrp': marketPrice})
+            ledger = self.__agent.GetLedger()
+            self.agentInfoSignal.emit(self.__agent.GetInitAsset(), evaluation, ledger)
         self.step = 0
 
     def SetReady(self, ready):
