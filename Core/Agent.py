@@ -82,15 +82,18 @@ class Agent:
             amount = order['amount']
             if order['position'] == EPostion.BUY:
                 # buy 체결될 때. ledger 주식 추가. order 삭제. history 추가. 체결 조건.
-                if price in ask.keys() or price < min(ask.keys()):
-                    if ask[price].amount >= amount:
+                if price >= min(ask.keys()):
+                    transPrice = min(ask.keys())
+                    # 0, 1 주 같은 낚시 물량 걸러내려는 의도.
+                    if ask[transPrice].amount >= amount:
                         self.__ledger[order['pair']] += amount
                         self.__history.append(order)
                         toRemove.append(orderId)
             elif order['position'] == EPostion.SELL:
                 # sell 체결될 때. ledger 현금 추가. order 삭제. history 추가. 체결 조건.
-                if price in bid.keys() or price > max(bid.keys()):
-                    if bid[price].amount >= amount:
+                if price <= max(bid.keys()):
+                    transPrice = max(bid.keys())
+                    if bid[transPrice].amount >= amount:
                         self.__ledger['fiat'] += price * amount
                         self.__history.append(order)
                         toRemove.append(orderId)
@@ -112,6 +115,16 @@ class Agent:
                 amount = self.__ledger[pair]
                 totalAsset += amount * currentPrices[pair]
 
+        for key, order in self.__orders.items():
+            if order['position'] == EPostion.BUY:
+                price = order['price']
+                amount = order['amount']
+                totalAsset += price * amount
+            if order['position'] == EPostion.SELL:
+                pair = order['pair']
+                price = currentPrices[pair]
+                amount = order['amount']
+                totalAsset += price * amount
         return totalAsset
 
     def GetInitAsset(self):
@@ -127,8 +140,8 @@ class Agent:
         else:
             return self.__ledger
 
-    def GetHistory(self):
+    def GetHistory(self) -> list:
         return self.__history
 
-    def GetOrders(self):
+    def GetOrders(self) -> dict:
         return self.__orders

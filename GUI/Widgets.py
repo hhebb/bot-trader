@@ -106,46 +106,46 @@ class OrderBookWidget(QFrame):
             self.bidLayout.addWidget(item)
 
     # deprecated!
-    def Update(self, askData: dict, bidData: dict):
-        # print('> ui update', bidData)
-        for price, order in askData.items():
-            i, targetItem = self.FindItem(price)
-            # print(targetItem)
-            # 기존에 없는 호가이면 추가.
-            if not targetItem:
-                idx = self.FindInsertIndex(str(price))
-                newItem = OrderItem(order.price, order.amount)
-                # print('insert index', idx)
-                self.askLayout.insertWidget(idx, newItem)
-                if self.askLayout.count() > 10:
-                    delete = self.askLayout.itemAt(self.askLayout.count()-1).widget()
-                    self.askLayout.removeWidget(delete)
-            else:
-                idx = self.askLayout.indexOf(targetItem)
-                # print('exist')
-                if order.amount == 0.0:
-                    # print('zero')
-                    self.askLayout.removeWidget(targetItem)
-                else:
-                    # print('change', targetItem.amount, order.amount)
-                    # targetItem.widget = OrderItem(order.price, -100)
-                    self.ReplaceItem(i, order.price, order.amount)
-
-        for price, order in bidData.items():
-            i, targetItem = self.FindItem(price)
-            if not targetItem:
-                idx = self.FindInsertIndex(str(price))
-                newItem = OrderItem(order.price, order.amount)
-                self.bidLayout.insertWidget(idx, newItem)
-                if self.bidLayout.count() > 10:
-                    delete = self.bidLayout.itemAt(self.bidLayout.count()-1).widget()
-                    self.bidLayout.removeWidget(delete)
-            else:
-                idx = self.bidLayout.indexOf(targetItem)
-                if order.amount == 0.0:
-                    self.bidLayout.removeWidget(targetItem)
-                else:
-                    self.ReplaceItem(i, order.price, order.amount)
+    # def Update(self, askData: dict, bidData: dict):
+    #     # print('> ui update', bidData)
+    #     for price, order in askData.items():
+    #         i, targetItem = self.FindItem(price)
+    #         # print(targetItem)
+    #         # 기존에 없는 호가이면 추가.
+    #         if not targetItem:
+    #             idx = self.FindInsertIndex(str(price))
+    #             newItem = OrderItem(order.price, order.amount)
+    #             # print('insert index', idx)
+    #             self.askLayout.insertWidget(idx, newItem)
+    #             if self.askLayout.count() > 10:
+    #                 delete = self.askLayout.itemAt(self.askLayout.count()-1).widget()
+    #                 self.askLayout.removeWidget(delete)
+    #         else:
+    #             idx = self.askLayout.indexOf(targetItem)
+    #             # print('exist')
+    #             if order.amount == 0.0:
+    #                 # print('zero')
+    #                 self.askLayout.removeWidget(targetItem)
+    #             else:
+    #                 # print('change', targetItem.amount, order.amount)
+    #                 # targetItem.widget = OrderItem(order.price, -100)
+    #                 self.ReplaceItem(i, order.price, order.amount)
+    #
+    #     for price, order in bidData.items():
+    #         i, targetItem = self.FindItem(price)
+    #         if not targetItem:
+    #             idx = self.FindInsertIndex(str(price))
+    #             newItem = OrderItem(order.price, order.amount)
+    #             self.bidLayout.insertWidget(idx, newItem)
+    #             if self.bidLayout.count() > 10:
+    #                 delete = self.bidLayout.itemAt(self.bidLayout.count()-1).widget()
+    #                 self.bidLayout.removeWidget(delete)
+    #         else:
+    #             idx = self.bidLayout.indexOf(targetItem)
+    #             if order.amount == 0.0:
+    #                 self.bidLayout.removeWidget(targetItem)
+    #             else:
+    #                 self.ReplaceItem(i, order.price, order.amount)
 
     def FindInsertIndex(self, p):
         idx = 0
@@ -230,40 +230,40 @@ class TransactionWidget(QFrame):
             self.transactionLayout.addWidget(w)
 
     # deprecated
-    def Update(self, data: list, reset: bool):
-        if reset:
-            self.ResetWidgets()
-
-        for trans in data:
-            if self.FindItem(trans.order):
-                continue
-            # print(trans.order, trans.timestamp)
-
-            stamp = str(trans.timestamp)
-            price = str(trans.price)
-            amount = str(trans.amount)
-            order = str(trans.order)
-            w = TransactionItem(stamp, price, amount, order)
-            # print(stamp, order)
-            self.transactionLayout.insertWidget(self.transactionLayout.count(), w)
-
-            if self.transactionLayout.count() > 10:
-                toRemove = self.transactionLayout.itemAt(0)
-                # print('> remove: ', toRemove.widget().objectName())
-                self.transactionLayout.removeWidget(toRemove.widget())
-
-            ##############
-            # if not self.FindItem(trans.timestamp):
-                # stamp = str(trans.timestamp)
-                # price = str(trans.price)
-                # amount = str(trans.amount)
-                # w = TransactionItem(stamp, price, amount)
-                # print(stamp)
-                # self.transLayout.insertWidget(self.transactionLayout.count(), w)
-                #
-                # if self.transLayout.count() > 10:
-                #     toRemove = self.transLayout.itemAt(0)
-                #     self.transLayout.removeWidget(toRemove.widget())
+    # def Update(self, data: list, reset: bool):
+    #     if reset:
+    #         self.ResetWidgets()
+    #
+    #     for trans in data:
+    #         if self.FindItem(trans.order):
+    #             continue
+    #         # print(trans.order, trans.timestamp)
+    #
+    #         stamp = str(trans.timestamp)
+    #         price = str(trans.price)
+    #         amount = str(trans.amount)
+    #         order = str(trans.order)
+    #         w = TransactionItem(stamp, price, amount, order)
+    #         # print(stamp, order)
+    #         self.transactionLayout.insertWidget(self.transactionLayout.count(), w)
+    #
+    #         if self.transactionLayout.count() > 10:
+    #             toRemove = self.transactionLayout.itemAt(0)
+    #             # print('> remove: ', toRemove.widget().objectName())
+    #             self.transactionLayout.removeWidget(toRemove.widget())
+    #
+    #         ##############
+    #         # if not self.FindItem(trans.timestamp):
+    #             # stamp = str(trans.timestamp)
+    #             # price = str(trans.price)
+    #             # amount = str(trans.amount)
+    #             # w = TransactionItem(stamp, price, amount)
+    #             # print(stamp)
+    #             # self.transLayout.insertWidget(self.transactionLayout.count(), w)
+    #             #
+    #             # if self.transLayout.count() > 10:
+    #             #     toRemove = self.transLayout.itemAt(0)
+    #             #     self.transLayout.removeWidget(toRemove.widget())
 
     def FindItem(self, order):
         for i in range(self.transactionLayout.count()):
@@ -340,10 +340,32 @@ class UserStatusPanel(QWidget):
         self.userLayout.addRow(self.totalAssetLabel, self.totalAsset)
         self.userLayout.addRow(self.netProfitLabel, self.netProfit)
 
+        self.orderLayout = QVBoxLayout()
+        self.outer.addLayout(self.orderLayout)
+
         self.setLayout(self.outer)
 
-    def Recv(self, initAsset, totalAsset, ledger):
+    def Recv(self, initAsset, totalAsset, ledger, orders, history):
         self.initAsset.setText((str(initAsset)))
         self.totalAsset.setText(str(totalAsset))
         self.netProfit.setText(str(float(totalAsset) - float(self.initAsset.text())))
 
+
+        # agent order clear
+        for i in reversed(range(self.orderLayout.count())):
+            rm = self.orderLayout.itemAt(i).widget()
+            self.orderLayout.removeWidget(rm)
+            rm.setParent(None)
+
+        for key, order in orders.items():
+            self.orderLayout.addWidget(AgentOrderItem(order))
+
+class AgentOrderItem(QWidget):
+    def __init__(self, order: dict):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(QLabel(order['pair']))
+        self.layout.addWidget(QLabel(str(order['position'])))
+        self.layout.addWidget(QLabel(str(order['amount'])))
+
+        self.setLayout(self.layout)

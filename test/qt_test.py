@@ -17,7 +17,7 @@ class MyApp(QWidget):
         self.runner.agentInfoSignal.connect(self.RecvAgentInfo)
         self.startButton.clicked.connect(self.clickedHandler)
         # self.orderPanel.orderbookWidget.drawFinished.connect(self.runner.SetReady)
-        self.drawed.connect(self.runner.SetReady)
+        #self.drawed.connect(self.runner.SetReady)
         self.stepRequest.connect(self.runner.SetReady)
 
     def clickedHandler(self):
@@ -59,8 +59,8 @@ class MyApp(QWidget):
         self.orderPanel.transactionWidget.Draw(trans.GetHistory())
         # self.drawed.emit(True)
 
-    def RecvAgentInfo(self, initAsset, totalAsset, ledger):
-        self.userStatusPanel.Recv(initAsset, totalAsset, ledger)
+    def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
+        self.userStatusPanel.Recv(initAsset, totalAsset, ledger, orders, history)
 
     # step by manual control
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
