@@ -1,5 +1,6 @@
 from  namespace import *
 from collections import defaultdict
+from copy import copy
 
 class Agent:
     '''
@@ -54,7 +55,7 @@ class Agent:
         self.__orders[self.__orderId] = order
         self.__orderId += 1
 
-    def Cancle(self, orderId: int):
+    def Cancel(self, orderId: int):
         # 취소 주문. ledger 복원. order 삭제.
         order = self.__orders[orderId]
         pair = order['pair']
@@ -64,12 +65,17 @@ class Agent:
 
         if position == EPostion.BUY:
             # buy 주문 취소할 때 현금 복원
-            self.__ledger[pair] += price * amount
+            self.__ledger['fiat'] += price * amount
         else:
             # sell 주문 취소할 때 수량 복원
             self.__ledger[pair] += amount
 
         del self.__orders[orderId]
+
+    def CancelAll(self):
+        orderIds = list(self.__orders.keys())
+        for orderId in orderIds:
+            self.Cancel(orderId)
 
     def Transact(self, ask, bid):
         # 체결되는 조건 - 시장가 범위 내에 위치 + 주문 가격에 잔량 존재.
@@ -113,6 +119,7 @@ class Agent:
             else:
                 # 주식일 땐 현재가로 계산
                 amount = self.__ledger[pair]
+                # print(amount, pair)
                 totalAsset += amount * currentPrices[pair]
 
         for key, order in self.__orders.items():

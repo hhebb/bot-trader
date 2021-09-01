@@ -1,5 +1,9 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame
 from PyQt5.QtCore import QRect, pyqtSignal
+from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, QCandlestickSet, QChartView
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter
+
 
 '''
 ticker, candle panel
@@ -11,11 +15,34 @@ class TickerPanel(QWidget):
 
     def InitUI(self):
         b = QPushButton('ticker', self)
-        candleChart = CandleStickWidget(self)
-        self.show()
+        self.__layout = QVBoxLayout()
+
+        # candle series
+        self.__candleSeries = QCandlestickSeries()
+        self.__candleSeries.setIncreasingColor(Qt.red)
+        self.__candleSeries.setDecreasingColor(Qt.blue)
+
+        # chart
+        self.__chart = QChart()
+        self.__chart.legend().hide()
+        self.__chart.addSeries(self.__candleSeries)
+
+        # displaying chart
+        self.__chartView = QChartView(self.__chart)
+        self.__chartView.setRenderHint(QPainter.Antialiasing)
+
+        self.__layout.addWidget(self.__chartView) # content view widget 필요???
+
+        self.setLayout(self.__layout)
+
+    def AppendCandle(self, candleData):
+        o, h, l, c = candleData.GetOHLC()
+        ts = candleData.GetStamp()
+        candle = QCandlestickSet(o, h, l, c, ts)
+        self.__candleSeries.append(candle)
 
 
-class CandleStickWidget(QWidget):
+class CandleStickWidget(QCandlestickSet):
     def __init__(self, parent):
         super().__init__(parent)
         self.InitUI()
@@ -26,11 +53,17 @@ class CandleStickWidget(QWidget):
 
 
 class Candle(QWidget):
-    def __init__(self):
+    # candle: Ticker.Ticker.Candle()
+    def __init__(self, candle):
         super().__init__()
+        self.__candle = candle
         self.InitUI()
 
     def InitUI(self):
+        timestamp = self.__candle.GetStamp()
+        ohlc = self.__candle.GetOHLC()
+
+    def MakeCandle(self):
         pass
 
 '''
@@ -340,8 +373,15 @@ class UserStatusPanel(QWidget):
         self.userLayout.addRow(self.totalAssetLabel, self.totalAsset)
         self.userLayout.addRow(self.netProfitLabel, self.netProfit)
 
+        self.dataListLayout = QHBoxLayout()
         self.orderLayout = QVBoxLayout()
-        self.outer.addLayout(self.orderLayout)
+        self.ledgerLayout = QVBoxLayout()
+        self.historyLayout = QVBoxLayout()
+        self.dataListLayout.addLayout(self.orderLayout)
+        self.dataListLayout.addLayout(self.ledgerLayout)
+        self.dataListLayout.addLayout(self.historyLayout)
+
+        self.outer.addLayout(self.dataListLayout)
 
         self.setLayout(self.outer)
 
@@ -350,15 +390,30 @@ class UserStatusPanel(QWidget):
         self.totalAsset.setText(str(totalAsset))
         self.netProfit.setText(str(float(totalAsset) - float(self.initAsset.text())))
 
-
         # agent order clear
         for i in reversed(range(self.orderLayout.count())):
             rm = self.orderLayout.itemAt(i).widget()
             self.orderLayout.removeWidget(rm)
             rm.setParent(None)
 
+        for i in reversed(range(self.ledgerLayout.count())):
+            rm = self.ledgerLayout.itemAt(i).widget()
+            self.ledgerLayout.removeWidget(rm)
+            rm.setParent(None)
+
+        for i in reversed(range(self.historyLayout.count())):
+            rm = self.historyLayout.itemAt(i).widget()
+            self.historyLayout.removeWidget(rm)
+            rm.setParent(None)
+
         for key, order in orders.items():
             self.orderLayout.addWidget(AgentOrderItem(order))
+
+        for key, ledger in ledger.items():
+            self.ledgerLayout.addWidget(LedgerItem(key, ledger))
+
+        for info in history:
+            self.historyLayout.addWidget(HistoryItem(info))
 
 class AgentOrderItem(QWidget):
     def __init__(self, order: dict):
@@ -366,6 +421,27 @@ class AgentOrderItem(QWidget):
         self.layout = QHBoxLayout()
         self.layout.addWidget(QLabel(order['pair']))
         self.layout.addWidget(QLabel(str(order['position'])))
+        self.layout.addWidget(QLabel(str(order['price'])))
         self.layout.addWidget(QLabel(str(order['amount'])))
+
+        self.setLayout(self.layout)
+
+class LedgerItem(QWidget):
+    def __init__(self, key, ledger):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(QLabel(key))
+        self.layout.addWidget(QLabel(str(ledger)))
+
+        self.setLayout(self.layout)
+
+class HistoryItem(QWidget):
+    def __init__(self, info: list):
+        super().__init__()
+        self.layout = QHBoxLayout()
+        self.layout.addWidget(QLabel(info['pair']))
+        self.layout.addWidget(QLabel(str(info['position'])))
+        self.layout.addWidget(QLabel(str(info['price'])))
+        self.layout.addWidget(QLabel(str(info['amount'])))
 
         self.setLayout(self.layout)

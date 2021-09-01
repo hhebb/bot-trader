@@ -1,7 +1,13 @@
 class Ticker:
+    '''
+        tickChart: [CandleBar(), ...]
+        volumeChart: [VolumeBar(), ...]
+        buffer: [[stamp, price, amount], ...]
+    '''
+
     def __init__(self):
-        self.__tick_chart = list()
-        self.__volume_chart = list()
+        self.__tickChart = list()
+        self.__volumeChart = list()
         self.__ma5 = list()
         self.__ma20 = list()
         self.__ma60 = list()
@@ -21,10 +27,10 @@ class Ticker:
                          self.__buffer[-1][1]
             totalVolume = self.CalcTotalVolume()
 
-            candle = Candle(stamp, [o, h, l, c])
-            volume = TradingVolume(stamp, totalVolume)
-            self.__tick_chart.append(candle)
-            self.__volume_chart.append(volume)
+            candle = CandleBar(stamp, [o, h, l, c])
+            volume = VolumeBar(stamp, totalVolume)
+            self.__tickChart.append(candle)
+            self.__volumeChart.append(volume)
 
             self.__buffer.clear()
 
@@ -32,10 +38,10 @@ class Ticker:
 
 
     def GetTickChart(self):
-        return self.__tick_chart
+        return self.__tickChart
 
     def GetVolumeChart(self):
-        return self.__volume_chart
+        return self.__volumeChart
 
     def GetMA5(self):
         return self.__ma5
@@ -47,13 +53,25 @@ class Ticker:
         return vol
 
 
-class Candle:
+class CandleBar:
     def __init__(self, timestamp, ohlc):
-        self.timestamp = timestamp
-        self.timestamp, self.open, self.high, self.low, self.close = ohlc
+        self.__timestamp = timestamp
+        self.__open, self.__high, self.__low, self.__close = ohlc
+
+    def GetStamp(self):
+        return self.__timestamp
+
+    def GetOHLC(self):
+        return self.__open, self.__high, self.__low, self.__close
 
 
-class TradingVolume:
+class VolumeBar:
     def __init__(self, timestamp, amount):
-        self.timestamp = timestamp
-        self.amount = amount
+        self.__timestamp = timestamp
+        self.__amount = amount
+
+    def GetStamp(self):
+        return self.__timestamp
+
+    def GetAmount(self):
+        return self.__amount

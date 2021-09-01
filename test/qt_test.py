@@ -11,6 +11,7 @@ class MyApp(QWidget):
     def __init__(self):
         super().__init__()
         self.InitUI()
+        self.setStyleSheet('background-color: #444444')
         self.runner = RunnerThread()
         self.market = self.runner.GetMarket()
         self.runner.stepped.connect(self.Recv)

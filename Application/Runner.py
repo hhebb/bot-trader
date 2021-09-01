@@ -53,6 +53,7 @@ class RunnerThread(QThread):
             self.__agent.Transact(ask=ask, bid=bid)
             self.__agent.Buy(pair='xrp', price=askPrice, amount=1)
             self.__agent.Sell(pair='xrp', price=bidPrice, amount=2)
+            self.__agent.CancelAll()
             marketPrice = trans.GetHistory()[-1].price
             # print(self.__agent.GetEvaluation({'xrp': marketPrice}))
             evaluation = self.__agent.GetEvaluation({'xrp': marketPrice})
