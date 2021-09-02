@@ -17,8 +17,8 @@ class Ticker:
         self.__candleGap = 10
         self.__timeBucket = 0
 
-        self.__lastCandle = None, None, None, None
         self.__stamp = None
+        self.__lastCandle = None
 
     def Update(self, timestamp: datetime, transactions: list):
         if not self.__stamp:
@@ -32,7 +32,7 @@ class Ticker:
         if self.__timeBucket == self.__candleGap:
             # bucket time 동안 거래가 한 번도 이뤄지지 않았을 때 처리.
             if len(self.__buffer) == 0:
-                candle = self.__lastCandle
+                candle = self.__lastCandle if self.__lastCandle else CandleBar(self.__stamp, [0, 0, 0, 0])
                 volume = 0
             else:
                 # stamp = self.__buffer[0][0]

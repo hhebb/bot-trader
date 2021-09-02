@@ -1,12 +1,11 @@
 import datetime
 
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame
-from PyQt5.QtCore import QRect, pyqtSignal
+from PyQt5.QtCore import QRect, pyqtSignal, QDateTime
 from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter
-
 
 '''
 ticker, candle panel
@@ -28,10 +27,13 @@ class TickerPanel(QWidget):
         # chart
         self.__chart = QChart()
         self.__chart.addSeries(self.__candleSeries)
+        self.__chart.createDefaultAxes()
+        self.__chart.legend().hide()
 
         # axis
         axis_x = QDateTimeAxis()
-        axis_x.setFormat("yyyy-mm-dd hh:mm:ss")
+        axis_x.setTickCount(10)
+        axis_x.setFormat("mm:ss")
         self.__chart.addAxis(axis_x, Qt.AlignBottom)
         self.__candleSeries.attachAxis(axis_x)
 
@@ -39,7 +41,7 @@ class TickerPanel(QWidget):
         self.__chartView = QChartView(self.__chart)
         self.__chartView.setRenderHint(QPainter.Antialiasing)
 
-        self.__layout.addWidget(self.__chartView) # content view widget 필요???
+        self.__layout.addWidget(self.__chartView)
 
         self.setLayout(self.__layout)
 
@@ -55,6 +57,13 @@ class TickerPanel(QWidget):
         for candle in tickChart:
             self.AppendCandle(candle)
 
+        # axis
+        axis_x = QDateTimeAxis()
+        axis_x.setTickCount(10)
+        axis_x.setFormat("mm:ss")
+        self.__chart.addAxis(axis_x, Qt.AlignBottom)
+        self.__candleSeries.attachAxis(axis_x)
+
         self.__chart.removeSeries(self.__candleSeries)
         self.__chart.addSeries(self.__candleSeries)
 
@@ -62,11 +71,18 @@ class TickerPanel(QWidget):
         self.__chart.legend().hide()
 
 
+
     def AppendCandle(self, candleData):
         o, h, l, c = candleData.GetOHLC()
         ts = candleData.GetStamp()
-        candle = QCandlestickSet(o, h, l, c, ts)
-        # candle = QCandlestickSet(candleData[1], candleData[2], candleData[3], candleData[4], candleData[0])
+        # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 초단위로 차트 그릴 수 있음.
+        format = "%Y-%m-%d %H:%M:%S"
+        t = datetime.datetime.fromtimestamp(ts)
+        t = t.strftime(format)
+        t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        t = t.toMSecsSinceEpoch()
+        candle = QCandlestickSet(o, h, l, c, t)
+
         self.__candleSeries.append(candle)
 
 
