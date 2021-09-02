@@ -34,7 +34,8 @@ class MyApp(QWidget):
         mainHbox.addLayout(marketLayout)
         mainHbox.addLayout(controlPanelLayout)
 
-        marketLayout.addWidget(TickerPanel())
+        self.tickerPanel = TickerPanel()
+        marketLayout.addWidget(self.tickerPanel)
         self.orderPanel = OrderPanel()
         marketLayout.addWidget(self.orderPanel)
 
@@ -51,14 +52,16 @@ class MyApp(QWidget):
 
 
     # slot. step by synchronized signal.
-    def Recv(self, ask, bid, trans):
-        # print(ask, bid, trans)
-        # print(ask.GetLOB())
+    def Recv(self, ask, bid, trans, ticker):
         # self.orderPanel.orderbookWidget.Update(ask.GetLOB(), bid.GetLOB())
         self.orderPanel.orderbookWidget.Draw(ask.GetLOB(), bid.GetLOB())
         # self.orderPanel.transactionWidget.Update(trans.GetHistory(), trans.GetIsReset())
         self.orderPanel.transactionWidget.Draw(trans.GetHistory())
         # self.drawed.emit(True)
+
+        tickChart = ticker.GetTickChart()
+        volumeChart = ticker.GetVolumeChart()
+        self.tickerPanel.Draw(tickChart, volumeChart)
 
     def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
         self.userStatusPanel.Recv(initAsset, totalAsset, ledger, orders, history)

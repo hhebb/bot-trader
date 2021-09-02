@@ -1,8 +1,10 @@
+from datetime import datetime
+
 class Ticker:
     '''
         tickChart: [CandleBar(), ...]
         volumeChart: [VolumeBar(), ...]
-        buffer: [[stamp, price, amount], ...]
+        buffer: [[price, amount], ...]
     '''
 
     def __init__(self):
@@ -12,30 +14,44 @@ class Ticker:
         self.__ma20 = list()
         self.__ma60 = list()
         self.__buffer = list()
-        self.__candleGap = 60
+        self.__candleGap = 10
         self.__timeBucket = 0
 
-    def Update(self, transaction):
-        for trans in transaction:
-            self.__buffer.append(trans)
+        self.__lastCandle = None, None, None, None
+        self.__stamp = None
 
-        if len(self.__timeBucket) == self.__candleGap:
-            stamp = self.__buffer[0][0]
-            o, h, l, c = self.__buffer[0][1], \
-                         max(self.__buffer, key=lambda x: x[1]), \
-                         min(self.__buffer, key=lambda x: x[1]), \
-                         self.__buffer[-1][1]
-            totalVolume = self.CalcTotalVolume()
+    def Update(self, timestamp: datetime, transactions: list):
+        if not self.__stamp:
+            self.__stamp = timestamp.timestamp()
 
-            candle = CandleBar(stamp, [o, h, l, c])
-            volume = VolumeBar(stamp, totalVolume)
+        # transactions 는 Transaction.MarketOrder() 이므로 변환.
+        for trans in transactions:
+            tick = [float(trans.price), float(trans.amount)]
+            self.__buffer.append(tick)
+
+        if self.__timeBucket == self.__candleGap:
+            # bucket time 동안 거래가 한 번도 이뤄지지 않았을 때 처리.
+            if len(self.__buffer) == 0:
+                candle = self.__lastCandle
+                volume = 0
+            else:
+                # stamp = self.__buffer[0][0]
+                o, h, l, c = self.__buffer[0][0], \
+                             max(self.__buffer, key=lambda x: x[0])[0], \
+                             min(self.__buffer, key=lambda x: x[0])[0], \
+                             self.__buffer[-1][0]
+                totalVolume = self.CalcTotalVolume()
+
+                candle = CandleBar(self.__stamp, [o, h, l, c])
+                volume = VolumeBar(self.__stamp, totalVolume)
             self.__tickChart.append(candle)
             self.__volumeChart.append(volume)
 
             self.__buffer.clear()
-
+            self.__timeBucket = 0
+            self.__lastCandle = candle
+            self.__stamp = None
         self.__timeBucket += 1
-
 
     def GetTickChart(self):
         return self.__tickChart
@@ -49,7 +65,7 @@ class Ticker:
     def CalcTotalVolume(self):
         vol = 0
         for buf in self.__buffer:
-            vol += buf[2]
+            vol += buf[1]
         return vol
 
 

@@ -38,7 +38,6 @@ class Agent:
 
     def Sell(self, pair: str, price: float, amount: float):
         # 팔 때. ledger 주식 차감, order 추가. 주문만 들어간 상태로, 체결은 다음 틱부터 가능.
-        print(self.__ledger[pair], amount)
         if self.__ledger[pair] < amount:
             return
         order = {'pair': pair, 'position': EPostion.SELL, 'price': price, 'amount': amount}

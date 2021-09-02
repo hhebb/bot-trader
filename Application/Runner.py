@@ -5,7 +5,7 @@ from Core.Agent import Agent
 import time
 
 class RunnerThread(QThread):
-    stepped = pyqtSignal(object, object, object)
+    stepped = pyqtSignal(object, object, object, object)
     agentInfoSignal = pyqtSignal(object, object, object, object, object)
 
     def __init__(self):
@@ -37,10 +37,11 @@ class RunnerThread(QThread):
             ask = self.__market.GetASK()
             bid = self.__market.GetBID()
             trans = self.__market.GetTransaction()
+            ticker = self.__market.GetTicker()
             # print('> trans: ', self.__market.GetTransaction().GetHistoryDiff())
             self.__timestamp += datetime.timedelta(seconds=1)
             self.step += 1
-            self.stepped.emit(ask, bid, trans)
+            self.stepped.emit(ask, bid, trans, ticker)
             # print('> step', self.step)
             # QThread.sleep(2)
             self.ready = False

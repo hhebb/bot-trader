@@ -45,6 +45,9 @@ class Transaction:
             self.__history.pop(0)
 
 
+    def GetCurrentPrice(self):
+        pass
+
     def GetHistory(self):
         return self.__history
 

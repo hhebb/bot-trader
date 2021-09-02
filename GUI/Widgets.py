@@ -1,6 +1,9 @@
+import datetime
+
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame
 from PyQt5.QtCore import QRect, pyqtSignal
-from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, QCandlestickSet, QChartView
+from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
+    QCandlestickSet, QChartView, QDateTimeAxis
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter
 
@@ -24,8 +27,13 @@ class TickerPanel(QWidget):
 
         # chart
         self.__chart = QChart()
-        self.__chart.legend().hide()
         self.__chart.addSeries(self.__candleSeries)
+
+        # axis
+        axis_x = QDateTimeAxis()
+        axis_x.setFormat("yyyy-mm-dd hh:mm:ss")
+        self.__chart.addAxis(axis_x, Qt.AlignBottom)
+        self.__candleSeries.attachAxis(axis_x)
 
         # displaying chart
         self.__chartView = QChartView(self.__chart)
@@ -35,36 +43,56 @@ class TickerPanel(QWidget):
 
         self.setLayout(self.__layout)
 
+    def Draw(self, tickChart: list, volumeChart: list):
+        # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
+        if self.__candleSeries.count() == len(tickChart):
+            return
+
+        # clear
+        self.__candleSeries.clear()
+
+        # re draw
+        for candle in tickChart:
+            self.AppendCandle(candle)
+
+        self.__chart.removeSeries(self.__candleSeries)
+        self.__chart.addSeries(self.__candleSeries)
+
+        self.__chart.createDefaultAxes()
+        self.__chart.legend().hide()
+
+
     def AppendCandle(self, candleData):
         o, h, l, c = candleData.GetOHLC()
         ts = candleData.GetStamp()
         candle = QCandlestickSet(o, h, l, c, ts)
+        # candle = QCandlestickSet(candleData[1], candleData[2], candleData[3], candleData[4], candleData[0])
         self.__candleSeries.append(candle)
 
 
-class CandleStickWidget(QCandlestickSet):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.InitUI()
-
-    def InitUI(self):
-        b = QPushButton('candle', self)
-        self.show()
-
-
-class Candle(QWidget):
-    # candle: Ticker.Ticker.Candle()
-    def __init__(self, candle):
-        super().__init__()
-        self.__candle = candle
-        self.InitUI()
-
-    def InitUI(self):
-        timestamp = self.__candle.GetStamp()
-        ohlc = self.__candle.GetOHLC()
-
-    def MakeCandle(self):
-        pass
+# class CandleStikcWidget(QCandlestickSet):
+#     def __init__(self, parent):
+#         super().__init__(parent)
+#         self.InitUI()
+#
+#     def InitUI(self):
+#         b = QPushButton('candle', self)
+#         self.show()
+#
+#
+# class Candle(QWidget):
+#     # candle: Ticker.Ticker.Candle()
+#     def __init__(self, candle):
+#         super().__init__()
+#         self.__candle = candle
+#         self.InitUI()
+#
+#     def InitUI(self):
+#         timestamp = self.__candle.GetStamp()
+#         ohlc = self.__candle.GetOHLC()
+#
+#     def MakeCandle(self):
+#         pass
 
 '''
 market data panel
