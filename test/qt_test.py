@@ -40,8 +40,10 @@ class MyApp(QWidget):
         marketLayout.addWidget(self.orderPanel)
 
         self.controlPanel = ControlPanel()
+        self.manualOrderPanel = ManualOrderPanel()
         self.userStatusPanel = UserStatusPanel()
         controlPanelLayout.addWidget(self.controlPanel)
+        controlPanelLayout.addWidget(self.manualOrderPanel)
         controlPanelLayout.addWidget(self.userStatusPanel)
 
         self.setLayout(mainHbox)

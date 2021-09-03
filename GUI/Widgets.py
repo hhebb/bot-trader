@@ -1,6 +1,7 @@
 import datetime
 
-from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, \
+    QVBoxLayout, QHBoxLayout, QFormLayout, QFrame, QLineEdit, QComboBox
 from PyQt5.QtCore import QRect, pyqtSignal, QDateTime
 from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis
@@ -30,19 +31,11 @@ class TickerPanel(QWidget):
         self.__chart.createDefaultAxes()
         self.__chart.legend().hide()
 
-        # axis
-        axis_x = QDateTimeAxis()
-        axis_x.setTickCount(10)
-        axis_x.setFormat("mm:ss")
-        self.__chart.addAxis(axis_x, Qt.AlignBottom)
-        self.__candleSeries.attachAxis(axis_x)
-
         # displaying chart
         self.__chartView = QChartView(self.__chart)
         self.__chartView.setRenderHint(QPainter.Antialiasing)
 
         self.__layout.addWidget(self.__chartView)
-
         self.setLayout(self.__layout)
 
     def Draw(self, tickChart: list, volumeChart: list):
@@ -50,19 +43,19 @@ class TickerPanel(QWidget):
         if self.__candleSeries.count() == len(tickChart):
             return
 
-        # clear
+        # clear all previous candles.
         self.__candleSeries.clear()
 
-        # re draw
+        # re-draw all candles.
         for candle in tickChart:
             self.AppendCandle(candle)
 
         # axis
-        axis_x = QDateTimeAxis()
-        axis_x.setTickCount(10)
-        axis_x.setFormat("mm:ss")
-        self.__chart.addAxis(axis_x, Qt.AlignBottom)
-        self.__candleSeries.attachAxis(axis_x)
+        # axis_x = QDateTimeAxis()
+        # axis_x.setTickCount(10)
+        # axis_x.setFormat("mm:ss")
+        # self.__chart.addAxis(axis_x, Qt.AlignBottom)
+        # self.__candleSeries.attachAxis(axis_x)
 
         self.__chart.removeSeries(self.__candleSeries)
         self.__chart.addSeries(self.__candleSeries)
@@ -71,11 +64,10 @@ class TickerPanel(QWidget):
         self.__chart.legend().hide()
 
 
-
     def AppendCandle(self, candleData):
         o, h, l, c = candleData.GetOHLC()
         ts = candleData.GetStamp()
-        # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 초단위로 차트 그릴 수 있음.
+        # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 분단위 이하로 차트 그릴 수 있음.
         format = "%Y-%m-%d %H:%M:%S"
         t = datetime.datetime.fromtimestamp(ts)
         t = t.strftime(format)
@@ -85,30 +77,6 @@ class TickerPanel(QWidget):
 
         self.__candleSeries.append(candle)
 
-
-# class CandleStikcWidget(QCandlestickSet):
-#     def __init__(self, parent):
-#         super().__init__(parent)
-#         self.InitUI()
-#
-#     def InitUI(self):
-#         b = QPushButton('candle', self)
-#         self.show()
-#
-#
-# class Candle(QWidget):
-#     # candle: Ticker.Ticker.Candle()
-#     def __init__(self, candle):
-#         super().__init__()
-#         self.__candle = candle
-#         self.InitUI()
-#
-#     def InitUI(self):
-#         timestamp = self.__candle.GetStamp()
-#         ohlc = self.__candle.GetOHLC()
-#
-#     def MakeCandle(self):
-#         pass
 
 '''
 market data panel
@@ -387,6 +355,44 @@ class ControlPanel(QWidget):
     def InitUI(self):
         b = QPushButton('control', self)
 
+
+class ManualOrderPanel(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.orderForm = QVBoxLayout()
+        self.buttonBox = QHBoxLayout()
+
+        # forms
+        self.formHeader = QHBoxLayout()
+        self.formHeader.addWidget(QLabel('pair'))
+        self.formHeader.addWidget(QLabel('price'))
+        self.formHeader.addWidget(QLabel('amount'))
+        self.formEdit = QHBoxLayout()
+        self.pairDropDown = QLabel('--pair--')
+        self.priceEdit = QLineEdit()
+        self.amountEdit = QLineEdit()
+        self.formEdit.addWidget(self.pairDropDown)
+        self.formEdit.addWidget(self.priceEdit)
+        self.formEdit.addWidget(self.amountEdit)
+
+        self.orderForm.addLayout(self.formHeader)
+        self.orderForm.addLayout(self.formEdit)
+
+        # button box
+        self.buyButton = QPushButton('buy')
+        self.sellButton = QPushButton('sell')
+        self.buttonBox.addWidget(self.buyButton)
+        self.buttonBox.addWidget(self.sellButton)
+
+
+        self.__layout.addLayout(self.orderForm)
+        self.__layout.addLayout(self.buttonBox)
+
+        self.setLayout(self.__layout)
 
 class UserStatusPanel(QWidget):
     def __init__(self):
