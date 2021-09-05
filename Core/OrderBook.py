@@ -1,4 +1,9 @@
 class OrderBook:
+    '''
+        OrderBook.__LOB = {price: LimitOrder, ...}
+        LimitOrder = object(price, amount, count)
+
+    '''
     def __init__(self, position):
         self.__type = position
         self.__LOB = dict()
@@ -46,7 +51,7 @@ class OrderBook:
         self.__LOB = dict(sorted(self.__LOB.items()))
         # print(self.__LOB)
 
-    def GetLOB(self):
+    def GetLOB(self) -> dict:
         return self.__LOB
 
 

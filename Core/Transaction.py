@@ -1,6 +1,10 @@
 import datetime
 
 class Transaction:
+    '''
+        history: [MarketOrder, ...]
+        MarketOrder: type, price, amount, order
+    '''
     def __init__(self):
         self.__max_size = 1000
         self.__history = list()
@@ -40,6 +44,9 @@ class Transaction:
         if len(self.__history) > self.__max_size:
             self.__history.pop(0)
 
+
+    def GetCurrentPrice(self):
+        pass
 
     def GetHistory(self):
         return self.__history

@@ -1,3 +1,5 @@
+import datetime
+
 from Core.OrderBook import OrderBook
 from Core.Transaction import Transaction
 from Core.Ticker import Ticker
@@ -20,7 +22,7 @@ class Market:
         self.__LOB_ask.SetSnapshot()
         self.__LOB_bid.SetSnapshot()
 
-    def Step(self, timestamp):
+    def Step(self, timestamp: datetime.datetime):
         data = self.dbManager.GetRow(timestamp)
         bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = self.__parser.Parse(data)
 
@@ -29,6 +31,7 @@ class Market:
             self.__LOB_bid.SetSnapshot(bidSnapshot)
             self.__LOB_ask.SetSnapshot(askSnapshot)
             # print('> lob snapshot parse')
+            pass
         else:
             self.__LOB_bid.Update(bid) # lob
             self.__LOB_ask.Update(ask) # lob
@@ -40,13 +43,13 @@ class Market:
             self.__transaction.SetSnapshot(transactionSnapshot)
             self.__transaction.Update(transaction)  # trans
             # print('> transaction snapshot parse')
+            pass
         else:
             self.__transaction.Update(transaction)  # trans
             self.__transaction.UnSet()
 
-        # print('> transaction', self.GetTransaction().GetHistoryDiff())
-
-        # self.__ticker.Update(self.GetTransaction().GetHistoryDiff())
+        # candle chart 를 위한 체결 데이터 수신.
+        self.__ticker.Update(timestamp, self.GetTransaction().GetHistoryDiff())
 
         # print('> step\n')
 
