@@ -1,4 +1,10 @@
 from PyQt5.QtWidgets import *
+from PyQt5 import QtGui
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
+    QCandlestickSet, QChartView, QDateTimeAxis
+from datetime import datetime
 
 '''
     [GUI 분류 체계]
@@ -31,16 +37,356 @@ from PyQt5.QtWidgets import *
         1. base
         2. base 들의 조합, 그 조합들의 조합. 일반 widget
         3. container
+    * 용도에 맞게 클래스 분류하도록 하기.
+        * 굳이 나누지 않아도 되는, 나눠서 쓸 일이 없는 것은 그냥 거대하게 만들어도 됨.
+        * 재활용하지도 않을거 나누어봤자 복잡도만 증가함.
+        * 혹시 필요하게 된다면 그때가서 나눠도 문제없음. 그 때는 손쉽게 나누기 가능.
+        * 나누지 않아서 불편하면 그냥 나눠도 됨.
+    * 전체적으로 유연한 개발에 초점을 맞춰야 함.
+        * 위 법칙들은 가이드로써만 이용하고 유동적으로 개발해야 함.  
         
 '''
 
+class LOBContainer(QFrame):
+    '''
+        호가창 통쨰로 가지고 있는 container.
+        크게 ask, bid 2 개의 ListView 를 포함함.
+    '''
 
-class BaseTable(QFrame):
-    def __init__(self, parent):
-        super().__init__(parent)
+    def __init__(self):
+        super(LOBContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QVBoxLayout()
+        self.__header = self.CreateHeader()
+        self.__askListWidget = LOBListWidget()
+        self.__bidListWidget = LOBListWidget()
+        self.__layout.addWidget(self.__header)
+        self.__layout.addWidget(self.__askListWidget)
+        self.__layout.addWidget(self.__bidListWidget)
+        self.setLayout(self.__layout)
+
+    def CreateHeader(self):
+        header = QFrame()
+        headerLayout = QHBoxLayout()
+        headerLayout.addWidget(QLabel('price'))
+        headerLayout.addSpacerItem(QSpacerItem(50, 20)) # w h
+        headerLayout.addWidget(QLabel('amount'))
+        header.setLayout(headerLayout)
+        return header
 
 
-class BaseTableItem(QFrame):
-    def __init__(self, parent):
-        super().__init__(parent)
+class LOBListWidget(QFrame):
+    '''
+        listWidget 을 포함하는 base class 로 만들어야 할 듯.
+    '''
+    def __init__(self):
+        super(LOBListWidget, self).__init__()
+        self.InitUI()
 
+    def InitUI(self):
+        # self.setFixedSize(200, 500)
+        self.__layout = QVBoxLayout()
+        self.__listWidget = QListWidget()
+        self.__layout.addWidget(self.__listWidget)
+        self.setLayout(self.__layout)
+
+        for i in range(5):
+            self.AddRow()
+
+    def AddRow(self):
+        item = QListWidgetItem()
+        custom_widget = LOBItem(None)
+        item.setSizeHint(custom_widget.sizeHint())
+        self.__listWidget.addItem(item)
+        self.__listWidget.setItemWidget(item, custom_widget)
+
+    def Clear(self):
+        # 루프 돌면서 하나하나 지워야 하는가?
+        self.__listWidget.clear()
+
+
+class LOBItem(QFrame):
+    def __init__(self):
+        super(LOBItem, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.__price = QLabel('price')
+        self.__bar = BaseBar()
+        self.__amount = QLabel('amount')
+        self.__layout.addWidget(self.__price)
+        self.__layout.addWidget(self.__bar)
+        self.__layout.addWidget(self.__amount)
+        self.setLayout(self.__layout)
+
+
+class BaseBar(QFrame):
+    '''
+        LOB item 에 amount 수량 시각화하는 bar.
+    '''
+    def __init__(self):
+        super(BaseBar, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.setLayout(self.__layout)
+
+    def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        self.Draw(a0, qp, 40)
+        qp.end()
+
+    def Draw(self, event, qp, w):
+        qp.setPen(QtGui.QColor(168, 34, 3))
+        qp.setBrush(QBrush(Qt.red, Qt.SolidPattern))
+        qp.drawRect(0, 0, w, 20) # x y w h
+
+
+class TransactionContainer(QFrame):
+    def __init__(self):
+        super(TransactionContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QVBoxLayout()
+        self.__header = self.CreateHeader()
+        self.__transactionListWidget = QListWidget()
+        self.__layout.addWidget(self.__header)
+        self.__layout.addWidget(self.__transactionListWidget)
+
+        self.setLayout(self.__layout)
+
+        for i in range(5):
+            self.AddRow()
+
+    def CreateHeader(self):
+        header = QFrame()
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel('stamp'))
+        layout.addWidget(QLabel('price'))
+        layout.addWidget(QLabel('position'))
+        layout.addWidget(QLabel('amount'))
+        header.setLayout(layout)
+        return header
+
+    def AddRow(self):
+        item = QListWidgetItem()
+        custom_widget = TransactionItem()
+        item.setSizeHint(custom_widget.sizeHint())
+        self.__transactionListWidget.addItem(item)
+        self.__transactionListWidget.setItemWidget(item, custom_widget)
+
+
+class TransactionItem(QFrame):
+    clicked = pyqtSignal()
+    def __init__(self):
+        super(TransactionItem, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.__layout.addWidget(QLabel('right now'))
+        self.__layout.addWidget(QLabel('1000'))
+        self.__layout.addWidget(QLabel('buy'))
+        self.__layout.addWidget(QLabel('10'))
+
+        # self.setStyleSheet('background: white')
+        self.setLayout(self.__layout)
+
+    def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
+        print('clicked')
+        self.clicked.emit()
+        
+        
+class CandleChartContainer(QFrame):
+    '''
+        hover 이벤트 등 추가.
+        MA, MACD 등 보조지표 추가.
+    '''
+    def __init__(self):
+        super(CandleChartContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        # candle series
+        self.__candleSeries = QCandlestickSeries()
+        self.__candleSeries.setIncreasingColor(Qt.red)
+        self.__candleSeries.setDecreasingColor(Qt.blue)
+
+        # chart
+        self.__chart = QChart()
+        self.__chart.addSeries(self.__candleSeries)
+        self.__chart.createDefaultAxes()
+        self.__chart.legend().hide()
+
+        # displaying chart
+        self.__chartView = QChartView(self.__chart)
+        self.__chartView.setRenderHint(QPainter.Antialiasing)
+
+        self.__layout.addWidget(self.__chartView)
+        self.setLayout(self.__layout)
+
+    def Draw(self, tickChart: list, volumeChart: list):
+        # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
+        if self.__candleSeries.count() == len(tickChart):
+            return
+
+        # clear all previous candles.
+        self.__candleSeries.clear()
+
+        # re-draw all candles.
+        for candle in tickChart:
+            self.AppendCandle(candle)
+
+        # axis
+        # axis_x = QDateTimeAxis()
+        # axis_x.setTickCount(10)
+        # axis_x.setFormat("mm:ss")
+        # self.__chart.addAxis(axis_x, Qt.AlignBottom)
+        # self.__candleSeries.attachAxis(axis_x)
+
+        self.__chart.removeSeries(self.__candleSeries)
+        self.__chart.addSeries(self.__candleSeries)
+
+        self.__chart.createDefaultAxes()
+        self.__chart.legend().hide()
+
+    def AppendCandle(self, candleData):
+        o, h, l, c = candleData.GetOHLC()
+        ts = candleData.GetStamp()
+        # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 분단위 이하로 차트 그릴 수 있음.
+        format = "%Y-%m-%d %H:%M:%S"
+        t = datetime.fromtimestamp(ts)
+        t = t.strftime(format)
+        t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        t = t.toMSecsSinceEpoch()
+        candle = QCandlestickSet(o, h, l, c, t)
+
+        self.__candleSeries.append(candle)
+
+
+class OrderListContainer(QFrame):
+    def __init__(self):
+        super(OrderListContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QVBoxLayout()
+        self.__header = self.CreateHeader()
+        self.__orderListWidget = QListWidget()
+        self.__layout.addWidget(self.__header)
+        self.__layout.addWidget(self.__orderListWidget)
+        self.setLayout(self.__layout)
+
+        for i in range(5):
+            self.AddRow()
+
+    def CreateHeader(self):
+        header = QFrame()
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel('pair'))
+        layout.addWidget(QLabel('position'))
+        layout.addWidget(QLabel('price'))
+        layout.addWidget(QLabel('amount'))
+        header.setLayout(layout)
+        return header
+
+    def AddRow(self):
+        item = QListWidgetItem()
+        custom_widget = OrderItem()
+        item.setSizeHint(custom_widget.sizeHint())
+        self.__orderListWidget.addItem(item)
+        self.__orderListWidget.setItemWidget(item, custom_widget)
+
+
+class OrderItem(QFrame):
+    orderCanceled = pyqtSignal()
+    def __init__(self):
+        super(OrderItem, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.__layout.addWidget(QLabel('pair'))
+        self.__layout.addWidget(QLabel('position'))
+        self.__layout.addWidget(QLabel('price'))
+        self.__layout.addWidget(QLabel('amount'))
+        self.__layout.addWidget(QPushButton('cancel'))
+        self.setLayout(self.__layout)
+
+
+    def CancelOrder(self):
+        pass
+
+
+class LedgerItem(QFrame):
+    def __init__(self):
+        super(LedgerItem, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.__layout.addWidget(QLabel('pair'))
+        self.__layout.addWidget(QLabel('amount'))
+        self.setLayout(self.__layout)
+
+
+class HistoryItem(QFrame):
+    def __init__(self):
+        super(HistoryItem, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QHBoxLayout()
+        self.__layout.addWidget(QLabel('pair'))
+        self.__layout.addWidget(QLabel('position'))
+        self.__layout.addWidget(QLabel('price'))
+        self.__layout.addWidget(QLabel('amount'))
+        self.setLayout(self.__layout)
+
+
+class ManualOrderContainer(QFrame):
+    '''
+        수동 주문 창.
+    '''
+    def __init__(self):
+        super(ManualOrderContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QGridLayout()
+        self.__pairLabel = QLabel('pair')
+        self.__priceLabel = QLabel('price')
+        self.__amountLabel = QLabel('amount')
+        self.__pairText = QLineEdit()
+        self.__priceText = QLineEdit()
+        self.__amountText = QLineEdit()
+        self.__sellButton = QPushButton('sell')
+        self.__buyButton = QPushButton('buy')
+
+        self.__layout.addWidget(self.__pairLabel, 0, 0)
+        self.__layout.addWidget(self.__priceLabel, 0, 1)
+        self.__layout.addWidget(self.__amountLabel, 0, 2)
+        self.__layout.addWidget(self.__pairText, 1, 0)
+        self.__layout.addWidget(self.__priceText, 1, 1)
+        self.__layout.addWidget(self.__amountText, 1, 2)
+        self.__layout.addWidget(self.__sellButton, 0, 3)
+        self.__layout.addWidget(self.__buyButton, 0, 4)
+
+        self.setLayout(self.__layout)
+
+
+# class UserSatusContainer:
+#     def __init__(self):
+#         super(, self).__init__()
+#         self.InitUI()
+#
+#     def InitUI(self):
+#         self.__layout = QGridLayout()
+        self.setLayout(self.__layout)
