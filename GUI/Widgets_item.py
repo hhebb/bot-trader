@@ -6,6 +6,8 @@ from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis
 from datetime import datetime
 
+import namespace
+
 '''
     [GUI 분류 체계]
     > 범위별 분류, 기능별 분류 2 가지 방법.
@@ -67,6 +69,10 @@ class LOBContainer(QFrame):
         self.__layout.addWidget(self.__bidListWidget)
         self.setLayout(self.__layout)
 
+
+    def SetProperty(self):
+        pass
+
     def CreateHeader(self):
         header = QFrame()
         headerLayout = QHBoxLayout()
@@ -95,9 +101,17 @@ class LOBListWidget(QFrame):
         for i in range(5):
             self.AddRow()
 
+        #
+        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLineWidth(3)
+        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+                           'border-color: red;'
+                           )
+
     def AddRow(self):
         item = QListWidgetItem()
-        custom_widget = LOBItem(None)
+        custom_widget = LOBItem()
         item.setSizeHint(custom_widget.sizeHint())
         self.__listWidget.addItem(item)
         self.__listWidget.setItemWidget(item, custom_widget)
@@ -287,6 +301,14 @@ class OrderListContainer(QFrame):
         for i in range(5):
             self.AddRow()
 
+        #
+        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLineWidth(3)
+        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+                           'border-color: red;'
+                           )
+
     def CreateHeader(self):
         header = QFrame()
         layout = QHBoxLayout()
@@ -325,6 +347,46 @@ class OrderItem(QFrame):
         pass
 
 
+class LedgerListContainer(QFrame):
+    def __init__(self):
+        super(LedgerListContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QVBoxLayout()
+        self.__header = self.CreateHeader()
+        self.__ledgerListWidget = QListWidget()
+        self.__layout.addWidget(self.__header)
+        self.__layout.addWidget(self.__ledgerListWidget)
+        self.setLayout(self.__layout)
+
+        for i in range(5):
+            self.AddRow()
+
+        #
+        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLineWidth(3)
+        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+                           'border-color: red;'
+                           )
+
+    def CreateHeader(self):
+        header = QFrame()
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel('pair'))
+        layout.addWidget(QLabel('amount'))
+        header.setLayout(layout)
+        return header
+
+    def AddRow(self):
+        item = QListWidgetItem()
+        custom_widget = LedgerItem()
+        item.setSizeHint(custom_widget.sizeHint())
+        self.__ledgerListWidget.addItem(item)
+        self.__ledgerListWidget.setItemWidget(item, custom_widget)
+
+
 class LedgerItem(QFrame):
     def __init__(self):
         super(LedgerItem, self).__init__()
@@ -335,6 +397,49 @@ class LedgerItem(QFrame):
         self.__layout.addWidget(QLabel('pair'))
         self.__layout.addWidget(QLabel('amount'))
         self.setLayout(self.__layout)
+
+
+class HistoryListContainer(QFrame):
+    def __init__(self):
+        super(HistoryListContainer, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__layout = QVBoxLayout()
+        self.__header = self.CreateHeader()
+        self.__historyListWidget = QListWidget()
+        self.__layout.addWidget(self.__header)
+        self.__layout.addWidget(self.__historyListWidget)
+        self.setLayout(self.__layout)
+
+        for i in range(5):
+            self.AddRow()
+
+        #
+        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLineWidth(3)
+        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+                           'border-color: red;'
+                           )
+
+
+    def CreateHeader(self):
+        header = QFrame()
+        layout = QHBoxLayout()
+        layout.addWidget(QLabel('pair'))
+        layout.addWidget(QLabel('position'))
+        layout.addWidget(QLabel('price'))
+        layout.addWidget(QLabel('amount'))
+        header.setLayout(layout)
+        return header
+
+    def AddRow(self):
+        item = QListWidgetItem()
+        custom_widget = HistoryItem()
+        item.setSizeHint(custom_widget.sizeHint())
+        self.__historyListWidget.addItem(item)
+        self.__historyListWidget.setItemWidget(item, custom_widget)
 
 
 class HistoryItem(QFrame):
@@ -382,11 +487,81 @@ class ManualOrderContainer(QFrame):
         self.setLayout(self.__layout)
 
 
-# class UserSatusContainer:
-#     def __init__(self):
-#         super(, self).__init__()
-#         self.InitUI()
-#
-#     def InitUI(self):
-#         self.__layout = QGridLayout()
+class UserStatusContainer(QFrame):
+    def __init__(self):
+        super(UserStatusContainer, self).__init__()
+        self.InitUI()
+        self.InitializeData()
+
+    def InitUI(self):
+        self.__layout = QGridLayout()
+        self.__nameLabel = QLabel('User: ')
+        self.__assetLabel = QLabel('Initial asset: ')
+        self.__evalLabel = QLabel('Evaluation: ')
+        self.__countLabel = QLabel('Trade count: ')
+        self.__nameText = QLabel()
+        self.__assetText = QLabel()
+        self.__evalText = QLabel()
+        self.__countText = QLabel()
+
+        self.__layout.addWidget(self.__nameLabel, 0, 0)
+        self.__layout.addWidget(self.__nameText, 0, 1)
+        self.__layout.addWidget(self.__assetLabel, 1, 0)
+        self.__layout.addWidget(self.__assetText, 1, 1)
+        self.__layout.addWidget(self.__evalLabel, 2, 0)
+        self.__layout.addWidget(self.__evalText, 2, 1)
+        self.__layout.addWidget(self.__countLabel, 3, 0)
+        self.__layout.addWidget(self.__countText, 4, 1)
+
         self.setLayout(self.__layout)
+
+    def InitializeData(self):
+        self.__nameText.setText('minsu')
+        self.__assetText.setText('10000')
+        self.__evalText.setText('10000')
+        self.__countText.setText('')
+
+
+# assembly
+class Window(QFrame):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.InitUI()
+
+    def InitUI(self):
+        self.__mainLayout = QHBoxLayout()
+
+        self.__marketLayout = QVBoxLayout()
+        self.__chart = CandleChartContainer()
+        self.__lob = LOBContainer()
+        self.__marketLayout.addWidget(self.__chart)
+        self.__marketLayout.addWidget(self.__lob)
+
+        self.__userLayout = QVBoxLayout()
+        self.__manualOrder = ManualOrderContainer()
+
+        self.__userBalanceLayout = QHBoxLayout()
+        self.__order = OrderListContainer()
+        self.__ledger = LedgerListContainer()
+        self.__history = HistoryListContainer()
+        self.__userBalanceLayout.addWidget(self.__order)
+        self.__userBalanceLayout.addWidget(self.__ledger)
+        self.__userBalanceLayout.addWidget(self.__history)
+
+        self.__userStatus = UserStatusContainer()
+        self.__userLayout.addWidget(self.__manualOrder)
+        self.__userLayout.addLayout(self.__userBalanceLayout)
+        self.__userLayout.addWidget(self.__userStatus)
+
+        self.__mainLayout.addLayout(self.__marketLayout)
+        self.__mainLayout.addLayout(self.__userLayout)
+
+        self.setLayout(self.__mainLayout)
+
+        #
+        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLineWidth(3)
+        r, g, b = [100 for i in range(3)]
+        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+                           'border-color: red;'
+                           )
