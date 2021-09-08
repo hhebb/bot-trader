@@ -23,6 +23,12 @@ class Market:
         self.__LOB_bid.SetSnapshot()
 
     def Step(self, timestamp: datetime.datetime):
+        '''
+            Get Data from Database
+            Parse data for use
+            save lob, transaction, ticker datas.
+            Ready to send these datas.
+        '''
         data = self.dbManager.GetRow(timestamp)
         bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = self.__parser.Parse(data)
 

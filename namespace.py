@@ -13,4 +13,11 @@ class EPostion(Enum):
 
 
 class ColorCode(Enum):
-    GRAY_PANEL = (50, 50, 50)
+    DARK_BACKGROUND = (10, 10, 10)
+    DARK_PANEL = (30, 30, 30)
+    DARK_MIDDLE = (50, 50, 50)
+
+    GRAY_BACKGROUND = (50, 50, 61)
+    GRAY_PANEL = (38, 38, 50)
+    NAVY_BACKGROUND = (17, 20, 45)
+    NAVY_PANEL = (32, 39, 79)

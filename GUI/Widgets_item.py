@@ -5,8 +5,8 @@ from PyQt5.QtCore import *
 from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis
 from datetime import datetime
-
 import namespace
+from Application.Runner import RunnerThread
 
 '''
     [GUI 분류 체계]
@@ -82,6 +82,11 @@ class LOBContainer(QFrame):
         header.setLayout(headerLayout)
         return header
 
+    def Update(self, askData: dict, bidData: dict):
+        # 최소한의 전처리를 하고 보내줄까??
+        self.__askListWidget.Update(askData)
+        self.__bidListWidget.Update(bidData)
+
 
 class LOBListWidget(QFrame):
     '''
@@ -99,19 +104,19 @@ class LOBListWidget(QFrame):
         self.setLayout(self.__layout)
 
         for i in range(5):
-            self.AddRow()
+            self.AddRow(0, 0)
 
         #
-        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
         r, g, b = namespace.ColorCode.GRAY_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
 
-    def AddRow(self):
+    def AddRow(self, price, amount):
         item = QListWidgetItem()
-        custom_widget = LOBItem()
+        custom_widget = LOBItem(price, amount)
         item.setSizeHint(custom_widget.sizeHint())
         self.__listWidget.addItem(item)
         self.__listWidget.setItemWidget(item, custom_widget)
@@ -120,20 +125,36 @@ class LOBListWidget(QFrame):
         # 루프 돌면서 하나하나 지워야 하는가?
         self.__listWidget.clear()
 
+    def Update(self, data: dict):
+        # clear
+        self.Clear()
+
+        # for i in reversed(range(self.askLayout.count())):
+        #     rm = self.askLayout.itemAt(i).widget()
+        #     self.askLayout.removeWidget(rm)
+        #     rm.setParent(None)
+
+        for price, order in data.items():
+            if self.__listWidget.count() >= 5:
+                break
+            self.AddRow(order.price, order.amount)
+
 
 class LOBItem(QFrame):
-    def __init__(self):
+    def __init__(self, price, amount):
         super(LOBItem, self).__init__()
+        self.__price = price
+        self.__amount = amount
         self.InitUI()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
-        self.__price = QLabel('price')
+        self.__priceLabel = QLabel(str(self.__price))
         self.__bar = BaseBar()
-        self.__amount = QLabel('amount')
-        self.__layout.addWidget(self.__price)
+        self.__amountLabel = QLabel(str(self.__amount))
+        self.__layout.addWidget(self.__priceLabel)
         self.__layout.addWidget(self.__bar)
-        self.__layout.addWidget(self.__amount)
+        self.__layout.addWidget(self.__amountLabel)
         self.setLayout(self.__layout)
 
 
@@ -176,7 +197,7 @@ class TransactionContainer(QFrame):
         self.setLayout(self.__layout)
 
         for i in range(5):
-            self.AddRow()
+            self.AddRow(0, 0, 0, 0)
 
     def CreateHeader(self):
         header = QFrame()
@@ -188,26 +209,51 @@ class TransactionContainer(QFrame):
         header.setLayout(layout)
         return header
 
-    def AddRow(self):
+    def AddRow(self, stamp, price, amount, order):
         item = QListWidgetItem()
-        custom_widget = TransactionItem()
+        custom_widget = TransactionItem(stamp, price, amount, order)
         item.setSizeHint(custom_widget.sizeHint())
         self.__transactionListWidget.addItem(item)
         self.__transactionListWidget.setItemWidget(item, custom_widget)
 
+    def Update(self, transaction: list):
+        # remove
+        self.__transactionListWidget.clear()
+        # for i in reversed(range(self.transactionLayout.count())):
+        #     rm = self.transactionLayout.itemAt(i).widget()
+        #     self.transactionLayout.removeWidget(rm)
+        #     rm.setParent(None)
+
+        for trans in transaction:
+            if self.__transactionListWidget.count() >= 10:
+                break
+
+            stamp = str(trans.timestamp)
+            price = str(trans.price)
+            amount = str(trans.amount)
+            order = str(trans.order)
+            self.AddRow(stamp, price, amount, order)
+
+            # w = TransactionItem(stamp, price, amount, order)
+            # self.transactionLayout.addWidget(w)
+
 
 class TransactionItem(QFrame):
     clicked = pyqtSignal()
-    def __init__(self):
+    def __init__(self, stamp, price, amount, order):
         super(TransactionItem, self).__init__()
+        self.__stamp = stamp
+        self.__price = price
+        self.__amount = amount
+        self.__order = order
         self.InitUI()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
-        self.__layout.addWidget(QLabel('right now'))
-        self.__layout.addWidget(QLabel('1000'))
-        self.__layout.addWidget(QLabel('buy'))
-        self.__layout.addWidget(QLabel('10'))
+        self.__layout.addWidget(QLabel(str(self.__stamp)))
+        self.__layout.addWidget(QLabel(str(self.__price)))
+        self.__layout.addWidget(QLabel(str(self.__amount)))
+        self.__layout.addWidget(QLabel(str(self.__order)))
 
         # self.setStyleSheet('background: white')
         self.setLayout(self.__layout)
@@ -286,7 +332,7 @@ class CandleChartContainer(QFrame):
 
 
 class OrderListContainer(QFrame):
-    def __init__(self):
+    def __init__(self, ):
         super(OrderListContainer, self).__init__()
         self.InitUI()
 
@@ -302,7 +348,7 @@ class OrderListContainer(QFrame):
             self.AddRow()
 
         #
-        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
         r, g, b = namespace.ColorCode.GRAY_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
@@ -364,7 +410,7 @@ class LedgerListContainer(QFrame):
             self.AddRow()
 
         #
-        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
         r, g, b = namespace.ColorCode.GRAY_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
@@ -416,13 +462,12 @@ class HistoryListContainer(QFrame):
             self.AddRow()
 
         #
-        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.setLineWidth(3)
+        # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        # self.setLineWidth(3)
         r, g, b = namespace.ColorCode.GRAY_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
-
 
     def CreateHeader(self):
         header = QFrame()
@@ -522,20 +567,31 @@ class UserStatusContainer(QFrame):
         self.__countText.setText('')
 
 
-# assembly
+# assembly. Top level.
 class Window(QFrame):
+    stepRequest = pyqtSignal(bool)
     def __init__(self):
         super(Window, self).__init__()
         self.InitUI()
+        self.__runnerThread = RunnerThread()
+        self.__runnerThread.stepped.connect(self.Recv)
+        self.__runnerThread.agentInfoSignal.connect(self.RecvAgentInfo)
+        # self.startButton.clicked.connect(self.clickedHandler)
+        self.stepRequest.connect(self.__runnerThread.SetReady)
 
     def InitUI(self):
+        button = QPushButton('simulate', self)
+        button.clicked.connect(self.start)
+
         self.__mainLayout = QHBoxLayout()
 
         self.__marketLayout = QVBoxLayout()
         self.__chart = CandleChartContainer()
         self.__lob = LOBContainer()
+        self.__transaction = TransactionContainer()
         self.__marketLayout.addWidget(self.__chart)
         self.__marketLayout.addWidget(self.__lob)
+        self.__marketLayout.addWidget(self.__transaction)
 
         self.__userLayout = QVBoxLayout()
         self.__manualOrder = ManualOrderContainer()
@@ -561,7 +617,37 @@ class Window(QFrame):
         #
         self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = [100 for i in range(3)]
+        r, g, b = namespace.ColorCode.GRAY_BACKGROUND.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
+
+    # slot. step by synchronized signal.
+    def Recv(self, ask, bid, trans, ticker):
+        # lob recv
+        # self.orderPanel.orderbookWidget.Draw(ask.GetLOB(), bid.GetLOB())
+        self.__lob.Update(ask.GetLOB(), bid.GetLOB())
+
+        # transaction recv
+        # self.orderPanel.transactionWidget.Draw(trans.GetHistory())
+        self.__transaction.Update(trans.GetHistory())
+
+        # tick recv
+        tickChart = ticker.GetTickChart()
+        volumeChart = ticker.GetVolumeChart()
+        # self.tickerPanel.Draw(tickChart, volumeChart)
+        self.__chart.Draw(tickChart, volumeChart)
+
+    # step by manual control
+    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        if e.key() == Qt.Key_S:
+            self.stepRequest.emit(True)
+
+    def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
+        #self.userStatusPanel.Recv(initAsset, totalAsset, ledger, orders, history)
+        pass
+
+
+    def start(self):
+        # simulate start button
+        self.__runnerThread.start()
