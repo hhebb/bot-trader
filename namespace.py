@@ -21,3 +21,13 @@ class ColorCode(Enum):
     GRAY_PANEL = (38, 38, 50)
     NAVY_BACKGROUND = (17, 20, 45)
     NAVY_PANEL = (32, 39, 79)
+
+
+class SimulateState(Enum):
+    RUNNING = 0
+    STOP = 1
+
+
+class SimulateSpeedLimit(Enum):
+    UPPER_BOUND = 10
+    LOWER_BOUND = 1

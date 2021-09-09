@@ -6,7 +6,7 @@ from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis
 from datetime import datetime
 import namespace
-from Application.Runner import RunnerThread
+from Application.Runner import RunnerWorker
 from Core import Agent
 
 '''
@@ -339,9 +339,12 @@ class CandleChartContainer(QFrame):
 
 
 class OrderListContainer(QFrame):
-    def __init__(self, ):
+    orderCanceled = pyqtSignal(int) # orderId
+    def __init__(self, manualOrderWorker: Agent.ManualOrderWorker):
         super(OrderListContainer, self).__init__()
+        self.__manualOrderWorker = manualOrderWorker
         self.InitUI()
+        self.orderCanceled.connect(self.__manualOrderWorker.ManualCancel)
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
@@ -374,9 +377,13 @@ class OrderListContainer(QFrame):
         header.setLayout(layout)
         return header
 
-    def AddRow(self, pair, position, price, amount):
+    def AddRow(self, parentContainer, orderId, pair, position, price, amount):
+        '''
+            signal connect.
+        '''
         item = QListWidgetItem()
-        custom_widget = OrderItem(pair, position, price, amount)
+        custom_widget = OrderItem(parentContainer, orderId, pair, position, price, amount)
+        custom_widget.orderCanceled.connect(self.orderCanceled.emit)
         item.setSizeHint(custom_widget.sizeHint())
         self.__orderListWidget.addItem(item)
         self.__orderListWidget.setItemWidget(item, custom_widget)
@@ -391,13 +398,21 @@ class OrderListContainer(QFrame):
             position = order['position']
             price = order['price']
             amount = order['amount']
-            self.AddRow(pair, position, price, amount)
+            self.AddRow(self, orderId, pair, position, price, amount)
 
+    def GetWorker(self):
+        return self.__manualOrderWorker
 
 class OrderItem(QFrame):
-    orderCanceled = pyqtSignal()
-    def __init__(self, pair, position, price, amount):
+    '''
+        * signal
+            * orderCanceld: 특정 주문 취소 신호. 위로 올리고 ManualOrder 모듈까지 전달해야 함.
+    '''
+    orderCanceled = pyqtSignal(int) # orderId
+    def __init__(self, parentContainer, orderId, pair, position, price, amount):
         super(OrderItem, self).__init__()
+        self.__parentContainer = parentContainer
+        self.__orderId = orderId
         self.__pair = pair
         self.__position = position
         self.__price = price
@@ -411,6 +426,7 @@ class OrderItem(QFrame):
         self.__priceLabel = QLabel(str(self.__price))
         self.__amountLabel = QLabel(str(self.__amount))
         self.__cancelButton = QPushButton('cancel')
+        self.__cancelButton.clicked.connect(self.CancelOrderRequsetHandler)
         self.__layout.addWidget(self.__pairLabel)
         self.__layout.addWidget(self.__positionLabel)
         self.__layout.addWidget(self.__priceLabel)
@@ -418,9 +434,13 @@ class OrderItem(QFrame):
         self.__layout.addWidget(self.__cancelButton)
         self.setLayout(self.__layout)
 
+    def GetOrderID(self):
+        return self.__orderId
 
-    def CancelOrder(self):
-        pass
+    def CancelOrderRequsetHandler(self):
+        # print(self.__orderId)
+        # self.orderCanceled.emit(self.__orderId)
+        self.__parentContainer.GetWorker().ManualCancel(self.__orderId)
 
 
 class LedgerListContainer(QFrame):
@@ -548,15 +568,20 @@ class HistoryItem(QFrame):
 
 
 class ManualOrderContainer(QFrame):
+    '''
+        * signal
+            * sellRequest
+            * buyRequest
+    '''
     sellRequest = pyqtSignal(str, float, float)
     buyRequest = pyqtSignal(str, float, float)
-    cancelRequest = pyqtSignal(str, float, float)
+    # cancelRequest = pyqtSignal(str, float, float)
     '''
         수동 주문 창.
     '''
-    def __init__(self, manualOrderThread: Agent.ManualOrderThread):
+    def __init__(self, manualOrderWorker: Agent.ManualOrderWorker):
         super(ManualOrderContainer, self).__init__()
-        self.__manualOrderThread = manualOrderThread
+        self.__manualOrderWorker = manualOrderWorker
         self.InitUI()
         self.SignalConnect()
 
@@ -590,17 +615,19 @@ class ManualOrderContainer(QFrame):
         self.__buyButton.clicked.connect(self.BuyRequestHandler)
         # self.__cancelButton.clicked.connect(self.CancelRequestHandler)
 
-        self.sellRequest.connect(self.__manualOrderThread.ManualSell)
-        self.buyRequest.connect(self.__manualOrderThread.ManualBuy)
-        self.cancelRequest.connect(self.__manualOrderThread.ManualCancel)
+        self.sellRequest.connect(self.__manualOrderWorker.ManualSell)
+        self.buyRequest.connect(self.__manualOrderWorker.ManualBuy)
+        # self.cancelRequest.connect(self.__manualOrderWorker.ManualCancel)
 
     def SellRequestHandler(self):
-        self.sellRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
-                              float(self.__amountText.text()))
+        self.__manualOrderWorker.ManualSell('xrp', 1000, 1)
+
+        # self.sellRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
+        #                       float(self.__amountText.text()))
 
     def BuyRequestHandler(self):
-        self.buyRequest.emit('xrp', 1000, 1)
-
+        # self.buyRequest.emit('xrp', 1000, 1)
+        self.__manualOrderWorker.ManualBuy('xrp', 1000, 1)
         # self.buyRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
         #                       float(self.__amountText.text()))
 
@@ -649,25 +676,50 @@ class UserStatusContainer(QFrame):
 
 # assembly. Top level.
 class Window(QFrame):
-    stepRequest = pyqtSignal(bool)
+    '''
+        * object
+            * runnerWorker: simulator thread worker
+            * manualOrderWorker: 수동 주문 처리 thread worker
+        * slot
+            * RecvMarketData: simulator step 을 통해 market data 수신.
+            * RecvAgentData: 수동 주문, 자동 주문, 주문 체결 을 통해 agent data 수신.
+            * RecvAgentInfo: agent 의 자산 상태 등 data 를 수신.
+
+        * manual order 를 worker 로 보낼 땐 함수 직접 호출, worker 에서 데이터 받을 땐 signal.
+    '''
+    # stepRequest = pyqtSignal()
 
     def __init__(self):
         super(Window, self).__init__()
 
         # right method using QThread??
         self.__runnerThread = QThread()
-        self.__runnerWorker = RunnerThread()
+        self.__manualOrderThread = QThread()
+
+        self.__runnerWorker = RunnerWorker()
+        self.__manualOrderWorker = Agent.ManualOrderWorker(
+            agent=self.__runnerWorker.GetAgent())
+
         self.__runnerWorker.moveToThread(self.__runnerThread)
+        self.__manualOrderWorker.moveToThread(self.__manualOrderThread)
+
         self.__runnerThread.started.connect(self.__runnerWorker.Simulate)
-        self.__runnerWorker.stepped.connect(self.Recv)
-        # self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo)
-        self.stepRequest.connect(self.__runnerWorker.SetReady)
+        self.__runnerWorker.stepped.connect(self.RecvMarketData)
+        self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo) # ??
+        self.__runnerWorker.transactionSignal.connect(self.RecvAgentData)
+
+        self.__manualOrderThread.started.connect(self.__manualOrderWorker.run)
+        self.__manualOrderWorker.manualOrderSignal.connect(self.RecvAgentData)
+        # 시스템에 의해 만들어지는 자동 주문 처리.ㄱ
+        # self.__runnerWorker.automaticOrderSignal.connect(self.RecvAgentData)
+
+        # self.stepRequest.connect(self.__runnerWorker.SetReady)
         #
 
 
         # self.__runnerThread = RunnerThread()
-        self.__manualOrderThread = Agent.ManualOrderThread(
-            agent=self.__runnerWorker.GetAgent())
+        # self.__manualOrderThread = Agent.ManualOrderThread(
+        #     agent=self.__runnerWorker.GetAgent())
         # self.__runnerThread.stepped.connect(self.Recv)
         # self.__runnerThread.agentStepSignal.connect(self.RecvAgentInfo)
         # self.__manualOrderThread.manualOrderSignal.connect(self.RecvManualOrder)
@@ -692,10 +744,10 @@ class Window(QFrame):
         self.__marketLayout.addWidget(self.__transaction)
 
         self.__userLayout = QVBoxLayout()
-        self.__manualOrder = ManualOrderContainer(self.__manualOrderThread)
+        self.__manualOrder = ManualOrderContainer(self.__manualOrderWorker)
 
         self.__userBalanceLayout = QHBoxLayout()
-        self.__order = OrderListContainer()
+        self.__order = OrderListContainer(self.__manualOrderWorker)
         self.__ledger = LedgerListContainer()
         self.__history = HistoryListContainer()
         self.__userBalanceLayout.addWidget(self.__order)
@@ -722,7 +774,10 @@ class Window(QFrame):
                            )
 
     # slot. step by synchronized signal.
-    def Recv(self, ask, bid, trans, ticker):
+    def RecvMarketData(self, ask, bid, trans, ticker):
+        '''
+            Market data Recv.
+        '''
         # lob recv
         # self.orderPanel.orderbookWidget.Draw(ask.GetLOB(), bid.GetLOB())
         self.__lob.Update(ask.GetLOB(), bid.GetLOB())
@@ -737,20 +792,42 @@ class Window(QFrame):
         # self.tickerPanel.Draw(tickChart, volumeChart)
         self.__chart.Draw(tickChart, volumeChart)
 
-    def RecvManualOrder(self, orders: dict, ledger: dict):
+    def RecvAgentData(self, orders: dict, ledger: dict):
+        '''
+            Agent data Recv.
+        '''
         self.__order.Update(orders)
-        print('orders update')
-        # self.__ledger.Update(ledger)
-        print('ledger update')
+        self.__ledger.Update(ledger)
+
+    # def RecvManualOrder(self, orders: dict, ledger: dict):
+    #     print('manual order')
+    #     self.__order.Update(orders)
+    #     # self.__ledger.Update(ledger)
 
     def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
+        '''
+            Agent Status Recv.
+        '''
         #self.userStatusPanel.Recv(initAsset, totalAsset, ledger, orders, history)
         pass
 
-    # step by manual control
+    # control
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
         if e.key() == Qt.Key_S:
-            self.stepRequest.emit(True)
+            # toggle run/stop
+            self.__runnerWorker.ToggleSimulateState()
+            # self.stepRequest.emit()
+        elif e.key() == Qt.Key_D:
+            # stepping
+            self.__runnerWorker.StopSimulate()
+            self.__runnerWorker.SetReady()
+            self.__runnerWorker.SimulateStep()
+        elif e.key() == Qt.Key_BracketRight:
+            # speed up
+            self.__runnerWorker.SpeedUp()
+        elif e.key() == Qt.Key_BracketLeft:
+            # speed down
+            self.__runnerWorker.SpeedDown()
 
     def start(self):
         # simulate start button
