@@ -175,11 +175,11 @@ class Agent(QObject):
         return self.__orders
 
 
-class ManualOrderThread(QThread):
+class ManualOrderWorker(QObject):
     manualOrderSignal = pyqtSignal(object, object) # orders, ledger
 
     def __init__(self, agent):
-        super(ManualOrderThread, self).__init__()
+        super(ManualOrderWorker, self).__init__()
         self.__agent: Agent = agent
         self.__orders = None
         self.__ledger = None
@@ -192,12 +192,12 @@ class ManualOrderThread(QThread):
     def ManualSell(self, pair, price, amount):
         self.__agent.Sell(pair, price, amount)
         # self.manualOrderSignal.emit(self.__orders, self.__ledger)
-        self.start()
+        self.run()
 
     def ManualBuy(self, pair, price, amount):
         self.__agent.Buy(pair, price, amount)
         # self.manualOrderSignal.emit(self.__orders, self.__ledger)
-        self.start()
+        self.run()
 
     def ManualCancel(self, orderId):
         self.Cancel(orderId=orderId)
@@ -207,7 +207,7 @@ class ManualOrderThread(QThread):
         return self.__agent
 
     def run(self) -> None:
-        print('manual thread')
+        print('manual order!')
         orders = self.__agent.GetOrders()
         ledger = self.__agent.GetLedger()
         self.manualOrderSignal.emit(orders, ledger)

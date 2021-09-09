@@ -6,7 +6,7 @@ from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis
 from datetime import datetime
 import namespace
-from Application.Runner import RunnerThread
+from Application.Runner import RunnerWorker
 from Core import Agent
 
 '''
@@ -554,9 +554,9 @@ class ManualOrderContainer(QFrame):
     '''
         수동 주문 창.
     '''
-    def __init__(self, manualOrderThread: Agent.ManualOrderThread):
+    def __init__(self, manualOrderWorker: Agent.ManualOrderWorker):
         super(ManualOrderContainer, self).__init__()
-        self.__manualOrderThread = manualOrderThread
+        self.__manualOrderWorker = manualOrderWorker
         self.InitUI()
         self.SignalConnect()
 
@@ -590,17 +590,17 @@ class ManualOrderContainer(QFrame):
         self.__buyButton.clicked.connect(self.BuyRequestHandler)
         # self.__cancelButton.clicked.connect(self.CancelRequestHandler)
 
-        self.sellRequest.connect(self.__manualOrderThread.ManualSell)
-        self.buyRequest.connect(self.__manualOrderThread.ManualBuy)
-        self.cancelRequest.connect(self.__manualOrderThread.ManualCancel)
+        self.sellRequest.connect(self.__manualOrderWorker.ManualSell)
+        self.buyRequest.connect(self.__manualOrderWorker.ManualBuy)
+        self.cancelRequest.connect(self.__manualOrderWorker.ManualCancel)
 
     def SellRequestHandler(self):
         self.sellRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
                               float(self.__amountText.text()))
 
     def BuyRequestHandler(self):
-        self.buyRequest.emit('xrp', 1000, 1)
-
+        # self.buyRequest.emit('xrp', 1000, 1)
+        self.__manualOrderWorker.ManualBuy('xrp', 1000, 1)
         # self.buyRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
         #                       float(self.__amountText.text()))
 
@@ -649,25 +649,35 @@ class UserStatusContainer(QFrame):
 
 # assembly. Top level.
 class Window(QFrame):
-    stepRequest = pyqtSignal(bool)
+    # stepRequest = pyqtSignal()
 
     def __init__(self):
         super(Window, self).__init__()
 
         # right method using QThread??
         self.__runnerThread = QThread()
-        self.__runnerWorker = RunnerThread()
+        self.__manualOrderThread = QThread()
+
+        self.__runnerWorker = RunnerWorker()
+        self.__manualOrderWorker = Agent.ManualOrderWorker(
+            agent=self.__runnerWorker.GetAgent())
+
         self.__runnerWorker.moveToThread(self.__runnerThread)
+        self.__manualOrderWorker.moveToThread(self.__manualOrderThread)
+
         self.__runnerThread.started.connect(self.__runnerWorker.Simulate)
         self.__runnerWorker.stepped.connect(self.Recv)
-        # self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo)
-        self.stepRequest.connect(self.__runnerWorker.SetReady)
+        self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo)
+
+        self.__manualOrderThread.started.connect(self.__manualOrderWorker.run)
+        self.__manualOrderWorker.manualOrderSignal.connect(self.RecvManualOrder)
+        # self.stepRequest.connect(self.__runnerWorker.SetReady)
         #
 
 
         # self.__runnerThread = RunnerThread()
-        self.__manualOrderThread = Agent.ManualOrderThread(
-            agent=self.__runnerWorker.GetAgent())
+        # self.__manualOrderThread = Agent.ManualOrderThread(
+        #     agent=self.__runnerWorker.GetAgent())
         # self.__runnerThread.stepped.connect(self.Recv)
         # self.__runnerThread.agentStepSignal.connect(self.RecvAgentInfo)
         # self.__manualOrderThread.manualOrderSignal.connect(self.RecvManualOrder)
@@ -692,7 +702,7 @@ class Window(QFrame):
         self.__marketLayout.addWidget(self.__transaction)
 
         self.__userLayout = QVBoxLayout()
-        self.__manualOrder = ManualOrderContainer(self.__manualOrderThread)
+        self.__manualOrder = ManualOrderContainer(self.__manualOrderWorker)
 
         self.__userBalanceLayout = QHBoxLayout()
         self.__order = OrderListContainer()
@@ -750,7 +760,8 @@ class Window(QFrame):
     # step by manual control
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
         if e.key() == Qt.Key_S:
-            self.stepRequest.emit(True)
+            self.__runnerWorker.SetReady()
+            # self.stepRequest.emit()
 
     def start(self):
         # simulate start button
