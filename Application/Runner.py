@@ -4,20 +4,20 @@ from PyQt5.QtCore import pyqtSignal, QObject, QThread
 from Core.Agent import Agent
 import time
 
-class RunnerThread(QThread):
+class RunnerThread(QObject):
     stepped = pyqtSignal(object, object, object, object)
     # 알고리즘이 step 마다 행동을 취하고 emit.
     agentStepSignal = pyqtSignal(object, object, object, object, object)
     # 수동으로 조작할 때마다 agent 에서부터 연쇄적으로 emit 함. connect 는 top level GUI 에서.
-    manualOrderSignal = pyqtSignal(object, object)
+    # manualOrderSignal = pyqtSignal(object, object) # order, ledger
 
     def __init__(self):
         super().__init__()
         self.__market = Market()
         self.__agent = Agent(10000)
-        self.__timestamp = datetime.datetime.strptime('2021-08-22 15:24:13', '%Y-%m-%d %H:%M:%S')
+        self.__timestamp = datetime.datetime.strptime('2021-09-09 11:48:43', '%Y-%m-%d %H:%M:%S')
         self.__market.dbManager.Connect(db='data', collection=str(self.__timestamp))
-        self.__agent.manualOrderSignal.connect(self.manualOrderSignal.emit)
+        # self.__agent.GetManualOrderThread().manualOrderSignal.connect(self.manualOrderSignal.emit)
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
         # self.__pair = self.__market.dbManager.pair
         # self.__timestamp = datetime.datetime.strptime(self.__market.dbManager.timestamp, '%Y-%m-%d %H:%M:%S')
@@ -29,12 +29,11 @@ class RunnerThread(QThread):
         # collection total count 로 loop 돌려야 함.
         # initial timestamp 지정해야 함.
 
-        while self.step < 180:
-            tmp = 0
-            time.sleep(.1)
-            while not self.ready:
-                tmp += 1
-                # print('', end=' ')
+        while True: #self.step < 180:
+            # print(self.step)
+            time.sleep(.05)
+            while False: #not self.ready:
+                # print(self.ready)
                 pass
             self.__market.Step(self.__timestamp)
             # self.__agent.Execute()
@@ -56,6 +55,7 @@ class RunnerThread(QThread):
             primeBidKey = list(bid.GetLOB().keys())[-1]
             bidPrice = bid.GetLOB()[primeBidKey].price #->LimitOrder, order[amount], order[count]
             self.__agent.Transact(ask=ask, bid=bid)
+
             self.__agent.Buy(pair='xrp', price=askPrice, amount=1)
             self.__agent.Sell(pair='xrp', price=bidPrice, amount=2)
             self.__agent.CancelAll()

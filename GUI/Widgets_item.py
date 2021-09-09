@@ -7,6 +7,7 @@ from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
 from datetime import datetime
 import namespace
 from Application.Runner import RunnerThread
+from Core import Agent
 
 '''
     [GUI 분류 체계]
@@ -61,9 +62,11 @@ class LOBContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
+        self.__title = QLabel('OrderBook')
         self.__header = self.CreateHeader()
         self.__askListWidget = LOBListWidget()
         self.__bidListWidget = LOBListWidget()
+        self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__askListWidget)
         self.__layout.addWidget(self.__bidListWidget)
@@ -109,7 +112,7 @@ class LOBListWidget(QFrame):
         #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
@@ -189,8 +192,10 @@ class TransactionContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
+        self.__title = QLabel('Transaction')
         self.__header = self.CreateHeader()
         self.__transactionListWidget = QListWidget()
+        self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__transactionListWidget)
 
@@ -274,6 +279,7 @@ class CandleChartContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
+        self.__title = QLabel('CandleChart')
         # candle series
         self.__candleSeries = QCandlestickSeries()
         self.__candleSeries.setIncreasingColor(Qt.red)
@@ -289,6 +295,7 @@ class CandleChartContainer(QFrame):
         self.__chartView = QChartView(self.__chart)
         self.__chartView.setRenderHint(QPainter.Antialiasing)
 
+        self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__chartView)
         self.setLayout(self.__layout)
 
@@ -338,19 +345,21 @@ class OrderListContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
+        self.__title = QLabel('Order')
         self.__header = self.CreateHeader()
         self.__orderListWidget = QListWidget()
+        self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__orderListWidget)
         self.setLayout(self.__layout)
 
-        for i in range(5):
-            self.AddRow()
+        # for i in range(5):
+        #     self.AddRow()
 
         #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
@@ -365,27 +374,48 @@ class OrderListContainer(QFrame):
         header.setLayout(layout)
         return header
 
-    def AddRow(self):
+    def AddRow(self, pair, position, price, amount):
         item = QListWidgetItem()
-        custom_widget = OrderItem()
+        custom_widget = OrderItem(pair, position, price, amount)
         item.setSizeHint(custom_widget.sizeHint())
         self.__orderListWidget.addItem(item)
         self.__orderListWidget.setItemWidget(item, custom_widget)
 
 
+    def Update(self, data: dict):
+        # print('order', len(data))
+        self.__orderListWidget.clear()
+        for orderId, order in data.items():
+            print('rendering order', orderId)
+            pair = order['pair']
+            position = order['position']
+            price = order['price']
+            amount = order['amount']
+            self.AddRow(pair, position, price, amount)
+
+
 class OrderItem(QFrame):
     orderCanceled = pyqtSignal()
-    def __init__(self):
+    def __init__(self, pair, position, price, amount):
         super(OrderItem, self).__init__()
+        self.__pair = pair
+        self.__position = position
+        self.__price = price
+        self.__amount = amount
         self.InitUI()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
-        self.__layout.addWidget(QLabel('pair'))
-        self.__layout.addWidget(QLabel('position'))
-        self.__layout.addWidget(QLabel('price'))
-        self.__layout.addWidget(QLabel('amount'))
-        self.__layout.addWidget(QPushButton('cancel'))
+        self.__pairLabel = QLabel(str(self.__pair))
+        self.__positionLabel = QLabel(str(self.__position))
+        self.__priceLabel = QLabel(str(self.__price))
+        self.__amountLabel = QLabel(str(self.__amount))
+        self.__cancelButton = QPushButton('cancel')
+        self.__layout.addWidget(self.__pairLabel)
+        self.__layout.addWidget(self.__positionLabel)
+        self.__layout.addWidget(self.__priceLabel)
+        self.__layout.addWidget(self.__amountLabel)
+        self.__layout.addWidget(self.__cancelButton)
         self.setLayout(self.__layout)
 
 
@@ -400,19 +430,21 @@ class LedgerListContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
+        self.__title = QLabel('Ledger')
         self.__header = self.CreateHeader()
         self.__ledgerListWidget = QListWidget()
+        self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__ledgerListWidget)
         self.setLayout(self.__layout)
 
-        for i in range(5):
-            self.AddRow()
+        # for i in range(5):
+        #     self.AddRow()
 
         #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
@@ -425,23 +457,35 @@ class LedgerListContainer(QFrame):
         header.setLayout(layout)
         return header
 
-    def AddRow(self):
+    def AddRow(self, pair, amount):
         item = QListWidgetItem()
-        custom_widget = LedgerItem()
+        custom_widget = LedgerItem(pair, amount)
         item.setSizeHint(custom_widget.sizeHint())
         self.__ledgerListWidget.addItem(item)
         self.__ledgerListWidget.setItemWidget(item, custom_widget)
 
+    def Update(self, data: dict):
+        # print('ledger :', data)
+        self.__ledgerListWidget.clear()
+        for pair, amount in data.items():
+            pair = pair
+            amount = amount
+            self.AddRow(pair, amount)
+
 
 class LedgerItem(QFrame):
-    def __init__(self):
+    def __init__(self, pair, amount):
         super(LedgerItem, self).__init__()
+        self.__pair = pair
+        self.__amount = amount
         self.InitUI()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
-        self.__layout.addWidget(QLabel('pair'))
-        self.__layout.addWidget(QLabel('amount'))
+        self.__pairLabel = QLabel(str(self.__pair))
+        self.__amountLabel = QLabel(str(self.__amount))
+        self.__layout.addWidget(self.__pairLabel)
+        self.__layout.addWidget(self.__amountLabel)
         self.setLayout(self.__layout)
 
 
@@ -452,8 +496,10 @@ class HistoryListContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
+        self.__title = QLabel('History')
         self.__header = self.CreateHeader()
         self.__historyListWidget = QListWidget()
+        self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__historyListWidget)
         self.setLayout(self.__layout)
@@ -464,7 +510,7 @@ class HistoryListContainer(QFrame):
         #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         # self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.GRAY_PANEL.value
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
@@ -502,15 +548,21 @@ class HistoryItem(QFrame):
 
 
 class ManualOrderContainer(QFrame):
+    sellRequest = pyqtSignal(str, float, float)
+    buyRequest = pyqtSignal(str, float, float)
+    cancelRequest = pyqtSignal(str, float, float)
     '''
         수동 주문 창.
     '''
-    def __init__(self):
+    def __init__(self, manualOrderThread: Agent.ManualOrderThread):
         super(ManualOrderContainer, self).__init__()
+        self.__manualOrderThread = manualOrderThread
         self.InitUI()
+        self.SignalConnect()
 
     def InitUI(self):
         self.__layout = QGridLayout()
+        self.__title = QLabel('Manual Order')
         self.__pairLabel = QLabel('pair')
         self.__priceLabel = QLabel('price')
         self.__amountLabel = QLabel('amount')
@@ -520,16 +572,42 @@ class ManualOrderContainer(QFrame):
         self.__sellButton = QPushButton('sell')
         self.__buyButton = QPushButton('buy')
 
-        self.__layout.addWidget(self.__pairLabel, 0, 0)
-        self.__layout.addWidget(self.__priceLabel, 0, 1)
-        self.__layout.addWidget(self.__amountLabel, 0, 2)
-        self.__layout.addWidget(self.__pairText, 1, 0)
-        self.__layout.addWidget(self.__priceText, 1, 1)
-        self.__layout.addWidget(self.__amountText, 1, 2)
-        self.__layout.addWidget(self.__sellButton, 0, 3)
-        self.__layout.addWidget(self.__buyButton, 0, 4)
+        self.__layout.addWidget(self.__title, 0, 0)
+        self.__layout.addWidget(self.__pairLabel, 1, 0)
+        self.__layout.addWidget(self.__priceLabel, 1, 1)
+        self.__layout.addWidget(self.__amountLabel, 1, 2)
+        self.__layout.addWidget(self.__pairText, 2, 0)
+        self.__layout.addWidget(self.__priceText, 2, 1)
+        self.__layout.addWidget(self.__amountText, 2, 2)
+        self.__layout.addWidget(self.__sellButton, 1, 3)
+        self.__layout.addWidget(self.__buyButton, 1, 4)
 
         self.setLayout(self.__layout)
+
+
+    def SignalConnect(self):
+        self.__sellButton.clicked.connect(self.SellRequestHandler)
+        self.__buyButton.clicked.connect(self.BuyRequestHandler)
+        # self.__cancelButton.clicked.connect(self.CancelRequestHandler)
+
+        self.sellRequest.connect(self.__manualOrderThread.ManualSell)
+        self.buyRequest.connect(self.__manualOrderThread.ManualBuy)
+        self.cancelRequest.connect(self.__manualOrderThread.ManualCancel)
+
+    def SellRequestHandler(self):
+        self.sellRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
+                              float(self.__amountText.text()))
+
+    def BuyRequestHandler(self):
+        self.buyRequest.emit('xrp', 1000, 1)
+
+        # self.buyRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
+        #                       float(self.__amountText.text()))
+
+    # def CancelRequestHandler(self):
+    #     self.cancelRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
+    #                           float(self.__amountText.text()))
+
 
 
 class UserStatusContainer(QFrame):
@@ -540,6 +618,7 @@ class UserStatusContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QGridLayout()
+        self.__title = QLabel('Status')
         self.__nameLabel = QLabel('User: ')
         self.__assetLabel = QLabel('Initial asset: ')
         self.__evalLabel = QLabel('Evaluation: ')
@@ -549,14 +628,15 @@ class UserStatusContainer(QFrame):
         self.__evalText = QLabel()
         self.__countText = QLabel()
 
-        self.__layout.addWidget(self.__nameLabel, 0, 0)
-        self.__layout.addWidget(self.__nameText, 0, 1)
-        self.__layout.addWidget(self.__assetLabel, 1, 0)
-        self.__layout.addWidget(self.__assetText, 1, 1)
-        self.__layout.addWidget(self.__evalLabel, 2, 0)
-        self.__layout.addWidget(self.__evalText, 2, 1)
-        self.__layout.addWidget(self.__countLabel, 3, 0)
-        self.__layout.addWidget(self.__countText, 4, 1)
+        self.__layout.addWidget(self.__title, 0, 0)
+        self.__layout.addWidget(self.__nameLabel, 1, 0)
+        self.__layout.addWidget(self.__nameText, 1, 1)
+        self.__layout.addWidget(self.__assetLabel, 2, 0)
+        self.__layout.addWidget(self.__assetText, 2, 1)
+        self.__layout.addWidget(self.__evalLabel, 3, 0)
+        self.__layout.addWidget(self.__evalText, 3, 1)
+        self.__layout.addWidget(self.__countLabel, 4, 0)
+        self.__layout.addWidget(self.__countText, 5, 1)
 
         self.setLayout(self.__layout)
 
@@ -570,14 +650,32 @@ class UserStatusContainer(QFrame):
 # assembly. Top level.
 class Window(QFrame):
     stepRequest = pyqtSignal(bool)
+
     def __init__(self):
         super(Window, self).__init__()
-        self.InitUI()
-        self.__runnerThread = RunnerThread()
-        self.__runnerThread.stepped.connect(self.Recv)
-        self.__runnerThread.agentStepSignal.connect(self.RecvAgentInfo)
+
+        # right method using QThread??
+        self.__runnerThread = QThread()
+        self.__runnerWorker = RunnerThread()
+        self.__runnerWorker.moveToThread(self.__runnerThread)
+        self.__runnerThread.started.connect(self.__runnerWorker.Simulate)
+        self.__runnerWorker.stepped.connect(self.Recv)
+        # self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo)
+        self.stepRequest.connect(self.__runnerWorker.SetReady)
+        #
+
+
+        # self.__runnerThread = RunnerThread()
+        self.__manualOrderThread = Agent.ManualOrderThread(
+            agent=self.__runnerWorker.GetAgent())
+        # self.__runnerThread.stepped.connect(self.Recv)
+        # self.__runnerThread.agentStepSignal.connect(self.RecvAgentInfo)
+        # self.__manualOrderThread.manualOrderSignal.connect(self.RecvManualOrder)
+        #
+        # self.__runnerThread.manualOrderSignal.connect(self.RecvManualOrder)
         # self.startButton.clicked.connect(self.clickedHandler)
-        self.stepRequest.connect(self.__runnerThread.SetReady)
+        # self.stepRequest.connect(self.__runnerThread.SetReady)
+        self.InitUI()
 
     def InitUI(self):
         button = QPushButton('simulate', self)
@@ -594,7 +692,7 @@ class Window(QFrame):
         self.__marketLayout.addWidget(self.__transaction)
 
         self.__userLayout = QVBoxLayout()
-        self.__manualOrder = ManualOrderContainer()
+        self.__manualOrder = ManualOrderContainer(self.__manualOrderThread)
 
         self.__userBalanceLayout = QHBoxLayout()
         self.__order = OrderListContainer()
@@ -617,9 +715,10 @@ class Window(QFrame):
         #
         self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.GRAY_BACKGROUND.value
+        r, g, b = namespace.ColorCode.DARK_BACKGROUND.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
+                           'color: white'
                            )
 
     # slot. step by synchronized signal.
@@ -638,15 +737,20 @@ class Window(QFrame):
         # self.tickerPanel.Draw(tickChart, volumeChart)
         self.__chart.Draw(tickChart, volumeChart)
 
-    # step by manual control
-    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
-        if e.key() == Qt.Key_S:
-            self.stepRequest.emit(True)
+    def RecvManualOrder(self, orders: dict, ledger: dict):
+        self.__order.Update(orders)
+        print('orders update')
+        # self.__ledger.Update(ledger)
+        print('ledger update')
 
     def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
         #self.userStatusPanel.Recv(initAsset, totalAsset, ledger, orders, history)
         pass
 
+    # step by manual control
+    def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        if e.key() == Qt.Key_S:
+            self.stepRequest.emit(True)
 
     def start(self):
         # simulate start button

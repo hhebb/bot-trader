@@ -4,7 +4,7 @@ from copy import copy
 from PyQt5.QtCore import *
 
 class Agent(QObject):
-    manualOrderSignal = pyqtSignal(object, object)
+    manualOrderSignal = pyqtSignal(object, object) # order, ledger
 
     '''
         ledger: {pair: amount, ...}
@@ -14,6 +14,8 @@ class Agent(QObject):
         필요한거 - *총자산평가, -승률, 순이익, 잔고(현금, 주식 별로)
     '''
     def __init__(self, asset):
+        super(Agent, self).__init__()
+        # self.__manualOrderThread = ManualOrderThread()
         self.__ledger = defaultdict(float)
         self.__orders = dict()
         self.__history = list()
@@ -110,17 +112,23 @@ class Agent(QObject):
         for key in toRemove:
             del self.__orders[key]
 
+    # user manual order handle
     def ManualSell(self, pair, price, amount):
         self.Sell(pair, price, amount)
         self.manualOrderSignal.emit(self.__orders, self.__ledger)
 
     def ManualBuy(self, pair, price, amount):
         self.Buy(pair, price, amount)
-        self.manualOrderSignal.emit(self.__orders, self.__ledger)
+        # self.manualOrderSignal.emit(self.__orders, self.__ledger)
+        self.__manualOrderThread.SetData(self.__orders, self.__ledger)
+        self.__manualOrderThread.start()
 
     def ManualCancel(self, orderId):
         self.Cancel(orderId=orderId)
         self.manualOrderSignal.emit(self.__orders, self.__ledger)
+
+    # def GetManualOrderThread(self):
+    #     return self.__manualOrderThread
 
     def GetEvaluation(self, currentPrices: dict):
         # 현재 자산가치 평가. ledger 에서 완전히 체결이 이루어진 상태 기준으로 asset 평가
@@ -165,3 +173,41 @@ class Agent(QObject):
 
     def GetOrders(self) -> dict:
         return self.__orders
+
+
+class ManualOrderThread(QThread):
+    manualOrderSignal = pyqtSignal(object, object) # orders, ledger
+
+    def __init__(self, agent):
+        super(ManualOrderThread, self).__init__()
+        self.__agent: Agent = agent
+        self.__orders = None
+        self.__ledger = None
+
+    def SetData(self, orders, ledger):
+        self.__orders = orders
+        self.__ledger = ledger
+
+    # user manual order handle
+    def ManualSell(self, pair, price, amount):
+        self.__agent.Sell(pair, price, amount)
+        # self.manualOrderSignal.emit(self.__orders, self.__ledger)
+        self.start()
+
+    def ManualBuy(self, pair, price, amount):
+        self.__agent.Buy(pair, price, amount)
+        # self.manualOrderSignal.emit(self.__orders, self.__ledger)
+        self.start()
+
+    def ManualCancel(self, orderId):
+        self.Cancel(orderId=orderId)
+        self.manualOrderSignal.emit(self.__orders, self.__ledger)
+
+    def GetAgent(self):
+        return self.__agent
+
+    def run(self) -> None:
+        print('manual thread')
+        orders = self.__agent.GetOrders()
+        ledger = self.__agent.GetLedger()
+        self.manualOrderSignal.emit(orders, ledger)
