@@ -1,8 +1,11 @@
 from  namespace import *
 from collections import defaultdict
 from copy import copy
+from PyQt5.QtCore import *
 
-class Agent:
+class Agent(QObject):
+    manualOrderSignal = pyqtSignal(object, object)
+
     '''
         ledger: {pair: amount, ...}
         orders: {id: {pair: '', position: '', price: '', amount: ''}, ...}
@@ -107,6 +110,17 @@ class Agent:
         for key in toRemove:
             del self.__orders[key]
 
+    def ManualSell(self, pair, price, amount):
+        self.Sell(pair, price, amount)
+        self.manualOrderSignal.emit(self.__orders, self.__ledger)
+
+    def ManualBuy(self, pair, price, amount):
+        self.Buy(pair, price, amount)
+        self.manualOrderSignal.emit(self.__orders, self.__ledger)
+
+    def ManualCancel(self, orderId):
+        self.Cancel(orderId=orderId)
+        self.manualOrderSignal.emit(self.__orders, self.__ledger)
 
     def GetEvaluation(self, currentPrices: dict):
         # 현재 자산가치 평가. ledger 에서 완전히 체결이 이루어진 상태 기준으로 asset 평가

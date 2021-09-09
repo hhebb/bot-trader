@@ -575,7 +575,7 @@ class Window(QFrame):
         self.InitUI()
         self.__runnerThread = RunnerThread()
         self.__runnerThread.stepped.connect(self.Recv)
-        self.__runnerThread.agentInfoSignal.connect(self.RecvAgentInfo)
+        self.__runnerThread.agentStepSignal.connect(self.RecvAgentInfo)
         # self.startButton.clicked.connect(self.clickedHandler)
         self.stepRequest.connect(self.__runnerThread.SetReady)
 

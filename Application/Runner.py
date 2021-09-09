@@ -6,7 +6,10 @@ import time
 
 class RunnerThread(QThread):
     stepped = pyqtSignal(object, object, object, object)
-    agentInfoSignal = pyqtSignal(object, object, object, object, object)
+    # 알고리즘이 step 마다 행동을 취하고 emit.
+    agentStepSignal = pyqtSignal(object, object, object, object, object)
+    # 수동으로 조작할 때마다 agent 에서부터 연쇄적으로 emit 함. connect 는 top level GUI 에서.
+    manualOrderSignal = pyqtSignal(object, object)
 
     def __init__(self):
         super().__init__()
@@ -14,6 +17,7 @@ class RunnerThread(QThread):
         self.__agent = Agent(10000)
         self.__timestamp = datetime.datetime.strptime('2021-08-22 15:24:13', '%Y-%m-%d %H:%M:%S')
         self.__market.dbManager.Connect(db='data', collection=str(self.__timestamp))
+        self.__agent.manualOrderSignal.connect(self.manualOrderSignal.emit)
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
         # self.__pair = self.__market.dbManager.pair
         # self.__timestamp = datetime.datetime.strptime(self.__market.dbManager.timestamp, '%Y-%m-%d %H:%M:%S')
@@ -61,7 +65,7 @@ class RunnerThread(QThread):
             ledger = self.__agent.GetLedger()
             orders = self.__agent.GetOrders()
             history = self.__agent.GetHistory()
-            self.agentInfoSignal.emit(self.__agent.GetInitAsset(), evaluation, ledger, orders, history)
+            self.agentStepSignal.emit(self.__agent.GetInitAsset(), evaluation, ledger, orders, history)
         self.step = 0
 
     def SetReady(self, ready):
