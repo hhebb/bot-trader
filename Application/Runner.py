@@ -1,8 +1,6 @@
 import datetime
-
-from namespace import *
 from Core.Market import Market
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import pyqtSignal, QObject, QThread
 from Core.Agent import Agent
 import time
 
