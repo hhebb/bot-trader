@@ -6,7 +6,8 @@ TODO
     - 루프를 돌리지 않고 함수를 새로 호출하는 방식으로 해보기.
     - 위젯 렌더링과 데이터 공급의 완벽한 싱크는 거의 불가능하므로, 그냥 호출방식으로 해야할 듯.
 * start, pause, step, speed control 기능 추가.
-- 자동 주문 시 signal 연결하기.
+* cancel 할 때 쓸모없는 signal 지우기.
+* 자동 주문 시 signal 연결하기.
 - ledger balance 에 단순하게 쌓지말고, order 단위로 관리해야함. id 부여해서. 마켓메이킹에 써야함.
 - 거래소 추가
 - core data 재정비.

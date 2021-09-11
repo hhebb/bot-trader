@@ -4,8 +4,8 @@ from copy import copy
 from PyQt5.QtCore import *
 
 class Agent(QObject):
-    # manualOrderSignal = pyqtSignal(object, object) # order, ledger
-    transactionSignal = pyqtSignal(object, object) # order, ledger
+    transactionSignal = pyqtSignal(object, object) # orders, ledger
+    automaticOrderSignal = pyqtSignal(object, object) # orders, ledger
 
     '''
         * data structure
@@ -20,7 +20,6 @@ class Agent(QObject):
     '''
     def __init__(self, asset):
         super(Agent, self).__init__()
-        # self.__manualOrderThread = ManualOrderThread()
         self.__ledger = defaultdict(float)
         self.__orders = dict()
         self.__history = list()
@@ -63,6 +62,14 @@ class Agent(QObject):
         self.__ledger['fiat'] -= price * amount
         self.__orders[self.__orderId] = order
         self.__orderId += 1
+
+    def AutoSell(self, pair: str, price: float, amount: float):
+        self.Sell(pair, price, amount)
+        self.automaticOrderSignal.emit(self.__orders, self.__ledger)
+
+    def AutoBuy(self, pair: str, price: float, amount: float):
+        self.Buy(pair, price, amount)
+        self.automaticOrderSignal.emit(self.__orders, self.__ledger)
 
     def Cancel(self, orderId: int):
         # 취소 주문. ledger 복원. order 삭제.
@@ -120,25 +127,6 @@ class Agent(QObject):
         for key in toRemove:
             del self.__orders[key]
         self.transactionSignal.emit(self.__orders, self.__ledger)
-
-
-    # user manual order handle
-    # def ManualSell(self, pair, price, amount):
-    #     self.Sell(pair, price, amount)
-    #     self.manualOrderSignal.emit(self.__orders, self.__ledger)
-    #
-    # def ManualBuy(self, pair, price, amount):
-    #     self.Buy(pair, price, amount)
-    #     # self.manualOrderSignal.emit(self.__orders, self.__ledger)
-    #     self.__manualOrderThread.SetData(self.__orders, self.__ledger)
-    #     self.__manualOrderThread.start()
-    #
-    # def ManualCancel(self, orderId):
-    #     self.Cancel(orderId=orderId)
-    #     self.manualOrderSignal.emit(self.__orders, self.__ledger)
-
-    # def GetManualOrderThread(self):
-    #     return self.__manualOrderThread
 
     def GetEvaluation(self, currentPrices: dict):
         # 현재 자산가치 평가. ledger 에서 완전히 체결이 이루어진 상태 기준으로 asset 평가
@@ -215,7 +203,7 @@ class ManualOrderWorker(QObject):
         self.run()
 
     def ManualCancel(self, orderId):
-        print('worker', orderId)
+        # print('worker', orderId)
         self.__agent.Cancel(orderId=orderId)
         print('manual cancel')
         # self.manualOrderSignal.emit(self.__orders, self.__ledger)

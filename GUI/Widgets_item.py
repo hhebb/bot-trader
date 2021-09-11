@@ -106,10 +106,9 @@ class LOBListWidget(QFrame):
         self.__layout.addWidget(self.__listWidget)
         self.setLayout(self.__layout)
 
-        for i in range(5):
-            self.AddRow(0, 0)
+        # for i in range(5):
+        #     self.AddRow(0, 0)
 
-        #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
         r, g, b = namespace.ColorCode.DARK_PANEL.value
@@ -137,7 +136,7 @@ class LOBListWidget(QFrame):
         #     self.askLayout.removeWidget(rm)
         #     rm.setParent(None)
 
-        for price, order in data.items():
+        for price, order in reversed(data.items()):
             if self.__listWidget.count() >= 5:
                 break
             self.AddRow(order.price, order.amount)
@@ -224,12 +223,8 @@ class TransactionContainer(QFrame):
     def Update(self, transaction: list):
         # remove
         self.__transactionListWidget.clear()
-        # for i in reversed(range(self.transactionLayout.count())):
-        #     rm = self.transactionLayout.itemAt(i).widget()
-        #     self.transactionLayout.removeWidget(rm)
-        #     rm.setParent(None)
 
-        for trans in transaction:
+        for trans in reversed(transaction):
             if self.__transactionListWidget.count() >= 10:
                 break
 
@@ -339,12 +334,10 @@ class CandleChartContainer(QFrame):
 
 
 class OrderListContainer(QFrame):
-    orderCanceled = pyqtSignal(int) # orderId
     def __init__(self, manualOrderWorker: Agent.ManualOrderWorker):
         super(OrderListContainer, self).__init__()
         self.__manualOrderWorker = manualOrderWorker
         self.InitUI()
-        self.orderCanceled.connect(self.__manualOrderWorker.ManualCancel)
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
@@ -383,7 +376,6 @@ class OrderListContainer(QFrame):
         '''
         item = QListWidgetItem()
         custom_widget = OrderItem(parentContainer, orderId, pair, position, price, amount)
-        custom_widget.orderCanceled.connect(self.orderCanceled.emit)
         item.setSizeHint(custom_widget.sizeHint())
         self.__orderListWidget.addItem(item)
         self.__orderListWidget.setItemWidget(item, custom_widget)
@@ -405,10 +397,8 @@ class OrderListContainer(QFrame):
 
 class OrderItem(QFrame):
     '''
-        * signal
-            * orderCanceld: 특정 주문 취소 신호. 위로 올리고 ManualOrder 모듈까지 전달해야 함.
+        CancelOrderRequestHandler: 취소 버튼을 누르면 worker 의 cancel 함수 직접 호출.
     '''
-    orderCanceled = pyqtSignal(int) # orderId
     def __init__(self, parentContainer, orderId, pair, position, price, amount):
         super(OrderItem, self).__init__()
         self.__parentContainer = parentContainer
@@ -426,7 +416,7 @@ class OrderItem(QFrame):
         self.__priceLabel = QLabel(str(self.__price))
         self.__amountLabel = QLabel(str(self.__amount))
         self.__cancelButton = QPushButton('cancel')
-        self.__cancelButton.clicked.connect(self.CancelOrderRequsetHandler)
+        self.__cancelButton.clicked.connect(self.CancelOrderRequestHandler)
         self.__layout.addWidget(self.__pairLabel)
         self.__layout.addWidget(self.__positionLabel)
         self.__layout.addWidget(self.__priceLabel)
@@ -437,9 +427,8 @@ class OrderItem(QFrame):
     def GetOrderID(self):
         return self.__orderId
 
-    def CancelOrderRequsetHandler(self):
+    def CancelOrderRequestHandler(self):
         # print(self.__orderId)
-        # self.orderCanceled.emit(self.__orderId)
         self.__parentContainer.GetWorker().ManualCancel(self.__orderId)
 
 
@@ -575,7 +564,6 @@ class ManualOrderContainer(QFrame):
     '''
     sellRequest = pyqtSignal(str, float, float)
     buyRequest = pyqtSignal(str, float, float)
-    # cancelRequest = pyqtSignal(str, float, float)
     '''
         수동 주문 창.
     '''
@@ -613,15 +601,12 @@ class ManualOrderContainer(QFrame):
     def SignalConnect(self):
         self.__sellButton.clicked.connect(self.SellRequestHandler)
         self.__buyButton.clicked.connect(self.BuyRequestHandler)
-        # self.__cancelButton.clicked.connect(self.CancelRequestHandler)
 
         self.sellRequest.connect(self.__manualOrderWorker.ManualSell)
         self.buyRequest.connect(self.__manualOrderWorker.ManualBuy)
-        # self.cancelRequest.connect(self.__manualOrderWorker.ManualCancel)
 
     def SellRequestHandler(self):
         self.__manualOrderWorker.ManualSell('xrp', 1000, 1)
-
         # self.sellRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
         #                       float(self.__amountText.text()))
 
@@ -630,10 +615,6 @@ class ManualOrderContainer(QFrame):
         self.__manualOrderWorker.ManualBuy('xrp', 1000, 1)
         # self.buyRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
         #                       float(self.__amountText.text()))
-
-    # def CancelRequestHandler(self):
-    #     self.cancelRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
-    #                           float(self.__amountText.text()))
 
 
 
@@ -707,11 +688,11 @@ class Window(QFrame):
         self.__runnerWorker.stepped.connect(self.RecvMarketData)
         self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo) # ??
         self.__runnerWorker.transactionSignal.connect(self.RecvAgentData)
+        # 시스템에 의해 만들어지는 자동 주문 처리.ㄱ
+        self.__runnerWorker.automaticOrderSignal.connect(self.RecvAgentData)
 
         self.__manualOrderThread.started.connect(self.__manualOrderWorker.run)
         self.__manualOrderWorker.manualOrderSignal.connect(self.RecvAgentData)
-        # 시스템에 의해 만들어지는 자동 주문 처리.ㄱ
-        # self.__runnerWorker.automaticOrderSignal.connect(self.RecvAgentData)
 
         # self.stepRequest.connect(self.__runnerWorker.SetReady)
         #
