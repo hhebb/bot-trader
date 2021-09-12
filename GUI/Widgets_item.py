@@ -92,7 +92,7 @@ class LOBContainer(QFrame):
                 border-width: 0px;
                 font-size: 20px;
                 border-radius: 0px;
-                margin: 20px 0px 0px 0px;
+                margin: 20px 0px 20px 10px;
             '''
         )
         self.__header.setObjectName('header')
@@ -154,9 +154,11 @@ class LOBListWidget(QFrame):
     def SetStyle(self):
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.DARK_MIDDLE.value
-        # self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
-        #                    )
+        r, g, b = 40, 40, 40#namespace.ColorCode.DARK_MIDDLE.value
+        self.setStyleSheet(
+            f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+            'border-radius: 5px;'
+                           )
 
         bar = QScrollBar()
         bar.setStyleSheet(
@@ -314,10 +316,10 @@ class TransactionContainer(QFrame):
             '''
                 border-style: none none solid none;
                 border-color: white;
-                border-width: 2px;
+                border-width: 0px;
                 font-size: 20px;
                 border-radius: 0px;
-                margin: 20px 0px 0px 0px;
+                margin: 20px 0px 20px 10px;
             '''
         )
         self.__header.setStyleSheet(
@@ -386,10 +388,10 @@ class TransactionContainer(QFrame):
 
     def CreateHeader(self):
         self.__header = QFrame()
-        self.__stampLabel = QLabel('stamp')
-        self.__priceLabel = QLabel('price')
-        self.__positionLabel = QLabel('position')
-        self.__amountLabel = QLabel('amount')
+        self.__stampLabel = QLabel('STAMP')
+        self.__priceLabel = QLabel('PRICE')
+        self.__positionLabel = QLabel('POSITION')
+        self.__amountLabel = QLabel('AMOUNT')
         layout = QHBoxLayout()
         layout.addWidget(self.__stampLabel)
         layout.addWidget(self.__priceLabel)
@@ -401,7 +403,7 @@ class TransactionContainer(QFrame):
     def AddRow(self, stamp, price, amount, order):
         item = QListWidgetItem()
         custom_widget = TransactionItem(stamp, price, amount, order)
-        item.setSizeHint(custom_widget.sizeHint())
+        item.setSizeHint(QSize(0, 30))  # (custom_widget.sizeHint())
         self.__transactionListWidget.addItem(item)
         self.__transactionListWidget.setItemWidget(item, custom_widget)
 
@@ -432,6 +434,7 @@ class TransactionItem(QFrame):
         self.__amount = amount
         self.__order = order
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
@@ -442,6 +445,14 @@ class TransactionItem(QFrame):
 
         # self.setStyleSheet('background: white')
         self.setLayout(self.__layout)
+
+    def SetStyle(self):
+        self.setStyleSheet(
+            f'''
+                        border-radius: 0px;
+                        margin: 0px 0px;
+                    '''
+        )
 
     def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
         print('clicked')
@@ -523,19 +534,17 @@ class OrderListContainer(QFrame):
         super(OrderListContainer, self).__init__()
         self.__manualOrderWorker = manualOrderWorker
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
+        self.CreateHeader()
         self.__layout = QVBoxLayout()
         self.__title = QLabel('Order')
-        self.__header = self.CreateHeader()
         self.__orderListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__orderListWidget)
         self.setLayout(self.__layout)
-
-        # for i in range(5):
-        #     self.AddRow()
 
         #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
@@ -545,15 +554,79 @@ class OrderListContainer(QFrame):
                            'border-color: red;'
                            )
 
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                        background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                        border-radius: 10px;
+                        margin: 5px;
+                    '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
+        self.__header.setObjectName('header')
+        self.__header.setStyleSheet(
+            f'''
+                        border-style: none none solid none;
+                        border-width: 1px;
+                        border-color: white;
+                        background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                        border-radius: 0px;
+                    '''
+        )
+        self.__pairLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__positionLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__orderListWidget.setStyleSheet(
+            f'''
+                background-color: rgb(40, 40, 40);
+                border-radius: 0px;
+            '''
+        )
+
     def CreateHeader(self):
-        header = QFrame()
+        self.__header = QFrame()
+        self.__pairLabel = QLabel('PAIR')
+        self.__positionLabel = QLabel('POSITION')
+        self.__priceLabel = QLabel('PRICE')
+        self.__amountLabel = QLabel('AMOUNT')
         layout = QHBoxLayout()
-        layout.addWidget(QLabel('pair'))
-        layout.addWidget(QLabel('position'))
-        layout.addWidget(QLabel('price'))
-        layout.addWidget(QLabel('amount'))
-        header.setLayout(layout)
-        return header
+        layout.addWidget(self.__pairLabel)
+        layout.addWidget(self.__positionLabel)
+        layout.addWidget(self.__priceLabel)
+        layout.addWidget(self.__amountLabel)
+        self.__header.setLayout(layout)
+        # return header
 
     def AddRow(self, parentContainer, orderId, pair, position, price, amount):
         '''
@@ -561,7 +634,7 @@ class OrderListContainer(QFrame):
         '''
         item = QListWidgetItem()
         custom_widget = OrderItem(parentContainer, orderId, pair, position, price, amount)
-        item.setSizeHint(custom_widget.sizeHint())
+        item.setSizeHint(QSize(0, 40))
         self.__orderListWidget.addItem(item)
         self.__orderListWidget.setItemWidget(item, custom_widget)
 
@@ -602,7 +675,7 @@ class OrderItem(QFrame):
         self.__positionLabel = QLabel(str(self.__position))
         self.__priceLabel = QLabel(str(self.__price))
         self.__amountLabel = QLabel(str(self.__amount))
-        self.__cancelButton = QPushButton('cancel')
+        self.__cancelButton = QPushButton('X')
         self.__cancelButton.clicked.connect(self.CancelOrderRequestHandler)
         self.__layout.addWidget(self.__pairLabel)
         self.__layout.addWidget(self.__positionLabel)
@@ -612,9 +685,46 @@ class OrderItem(QFrame):
         self.setLayout(self.__layout)
 
     def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_MIDDLE.value
         self.setStyleSheet(
-            'border-style: none solid;'
-            'background-color: rgb(0,10,100)'
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-style: none none solid none;
+                font-size: 10px;
+                border-color: rgb(50, 50, 50);
+                border-width: 1px;
+                border-radius: 5px;
+                margin: 1px 0px;
+            '''
+        )
+        self.__pairLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__positionLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__cancelButton.setFixedSize(25, 25)
+        self.__cancelButton.setStyleSheet(
+            '''
+                background-color: red;
+                color: black;
+                padding: 5px;
+                border-radius: 5px;
+            '''
         )
 
     def GetOrderID(self):
@@ -629,19 +739,18 @@ class LedgerListContainer(QFrame):
     def __init__(self):
         super(LedgerListContainer, self).__init__()
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
+        self.CreateHeader()
         self.__layout = QVBoxLayout()
         self.__title = QLabel('Ledger')
-        self.__header = self.CreateHeader()
+        self.CreateHeader()
         self.__ledgerListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__ledgerListWidget)
         self.setLayout(self.__layout)
-
-        # for i in range(5):
-        #     self.AddRow()
 
         #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
@@ -651,14 +760,63 @@ class LedgerListContainer(QFrame):
                            'border-color: red;'
                            )
 
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                        background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                        border-radius: 10px;
+                        margin: 5px;
+                    '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
+        self.__header.setObjectName('header')
+        self.__header.setStyleSheet(
+            f'''
+                        border-style: none none solid none;
+                        border-width: 1px;
+                        border-color: white;
+                        background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                        border-radius: 0px;
+                    '''
+        )
+        self.__pairLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__ledgerListWidget.setStyleSheet(
+            f'''
+                background-color: rgb(40, 40, 40);
+                border-radius: 0px;
+            '''
+        )
 
     def CreateHeader(self):
-        header = QFrame()
+        self.__header = QFrame()
+        self.__pairLabel = QLabel('PAIR')
+        self.__amountLabel = QLabel('AMOUNT')
         layout = QHBoxLayout()
-        layout.addWidget(QLabel('pair'))
-        layout.addWidget(QLabel('amount'))
-        header.setLayout(layout)
-        return header
+        layout.addWidget(self.__pairLabel)
+        layout.addWidget(self.__amountLabel)
+        self.__header.setLayout(layout)
+        # return header
 
     def AddRow(self, pair, amount):
         item = QListWidgetItem()
