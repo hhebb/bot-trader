@@ -98,6 +98,7 @@ class LOBListWidget(QFrame):
     def __init__(self):
         super(LOBListWidget, self).__init__()
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
         # self.setFixedSize(200, 500)
@@ -106,15 +107,43 @@ class LOBListWidget(QFrame):
         self.__layout.addWidget(self.__listWidget)
         self.setLayout(self.__layout)
 
-        # for i in range(5):
-        #     self.AddRow(0, 0)
-
+    def SetStyle(self):
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
         r, g, b = namespace.ColorCode.DARK_PANEL.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
+
+        bar = QScrollBar()
+        bar.setStyleSheet(
+            '''QScrollBar:vertical {
+                        border: 0px solid #999999;
+                        background:white;
+                        width:10px;    
+                        margin: 0px 0px 0px 0px;
+                    }
+                    QScrollBar::handle:vertical {         
+    
+                        min-height: 0px;
+                          border: 0px solid red;
+                        border-radius: 5px;
+                        background-color: black;
+                    }
+                    QScrollBar::add-line:vertical {       
+                        height: 0px;
+                        subcontrol-position: bottom;
+                        subcontrol-origin: margin;
+                    }
+                    QScrollBar::sub-line:vertical {
+                        height: 0 px;
+                        subcontrol-position: top;
+                        subcontrol-origin: margin;
+                    }'''
+        )
+        self.__listWidget.setVerticalScrollBar(bar)
+
+
 
     def AddRow(self, price, amount):
         item = QListWidgetItem()
@@ -148,6 +177,7 @@ class LOBItem(QFrame):
         self.__price = price
         self.__amount = amount
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
@@ -158,6 +188,27 @@ class LOBItem(QFrame):
         self.__layout.addWidget(self.__bar)
         self.__layout.addWidget(self.__amountLabel)
         self.setLayout(self.__layout)
+
+    def SetStyle(self):
+        self.setFixedSize(500, 40)
+        self.setObjectName('LOBItem')
+        self.setStyleSheet(
+            '''
+                QFrame#LOBItem {
+                    border-style: solid none none none;
+                    border-color: white;
+                    border-width: 1px;
+                    margin: 5px 50px;
+                    padding: 0px 20px;
+
+                }
+            '''
+            # 'QFrame'
+            # 'border-style: solid none;'
+            # 'border-color: white;'
+            # 'border-width: 2px;'
+            # 'border-radius: 10px'
+        )
 
 
 class BaseBar(QFrame):
@@ -395,6 +446,7 @@ class OrderListContainer(QFrame):
     def GetWorker(self):
         return self.__manualOrderWorker
 
+
 class OrderItem(QFrame):
     '''
         CancelOrderRequestHandler: 취소 버튼을 누르면 worker 의 cancel 함수 직접 호출.
@@ -408,6 +460,7 @@ class OrderItem(QFrame):
         self.__price = price
         self.__amount = amount
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
@@ -423,6 +476,12 @@ class OrderItem(QFrame):
         self.__layout.addWidget(self.__amountLabel)
         self.__layout.addWidget(self.__cancelButton)
         self.setLayout(self.__layout)
+
+    def SetStyle(self):
+        self.setStyleSheet(
+            'border-style: none solid;'
+            'background-color: rgb(0,10,100)'
+        )
 
     def GetOrderID(self):
         return self.__orderId
@@ -457,6 +516,7 @@ class LedgerListContainer(QFrame):
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
                            )
+
 
     def CreateHeader(self):
         header = QFrame()
@@ -672,7 +732,6 @@ class Window(QFrame):
 
     def __init__(self):
         super(Window, self).__init__()
-
         # right method using QThread??
         self.__runnerThread = QThread()
         self.__manualOrderThread = QThread()
@@ -709,6 +768,7 @@ class Window(QFrame):
         # self.startButton.clicked.connect(self.clickedHandler)
         # self.stepRequest.connect(self.__runnerThread.SetReady)
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
         button = QPushButton('simulate', self)
@@ -745,13 +805,35 @@ class Window(QFrame):
 
         self.setLayout(self.__mainLayout)
 
-        #
+    def SetStyle(self):
+        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+        self.setLineWidth(3)
+        r, g, b = namespace.ColorCode.DARK_BACKGROUND.value
+        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+                           'border-style: hidden;'
+                           # 'border-radius: 20px;'
+                           'margin: 1px;'
+                           # 'padding: 5px'
+                           )
+
+    def SetGlobalStyle(self):
+        '''
+            global style setting.
+        '''
+
         self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
         r, g, b = namespace.ColorCode.DARK_BACKGROUND.value
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-color: red;'
-                           'color: white'
+                           'color: white;'
+                           # f"font: 8pt '{namespace.Fonts.SEBANG_BOLD.value}';"
+                           # 'font-weight: bold;'
+                           # 'letter-spacing: 1.0px;'
+                           'border-style: hidden;'
+                           # 'border-radius: 20px;'
+                           # 'margin: 5px;'
+                           # 'padding: 5px'
                            )
 
     # slot. step by synchronized signal.

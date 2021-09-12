@@ -8,11 +8,26 @@ from PyQt5.QtGui import QPainter
 
 from GUI.Widgets_item import *
 
-app = QApplication(sys.argv)
 
-window = QMainWindow()
-w = Window()
-window.setCentralWidget(w)
-window.show()
+def main():
+    app = QApplication(sys.argv)
+    window = QMainWindow()
+    window.setGeometry(100, 100, 200, 400)
+    window.setStyleSheet(
+        f"font: 8pt '{namespace.Fonts.SEBANG_BOLD.value}';"
+        'font-weight: bold;'
+        'letter-spacing: 1.0px;'
+        'color: white;'
+                         )
+    # window.setWindowFlags(Qt.WindowType.Popup)
 
-sys.exit(app.exec_())
+    # central widget
+    w = Window()
+    window.setCentralWidget(w)
+    window.show()
+
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()
