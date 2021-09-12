@@ -24,7 +24,7 @@ class RunnerWorker(QObject):
         super().__init__()
         self.__market = Market()
         self.__agent = Agent(10000)
-        self.__timestamp = datetime.datetime.strptime('2021-08-22 15:24:13', '%Y-%m-%d %H:%M:%S')
+        self.__timestamp = datetime.datetime.strptime('2021-09-09 11:48:43', '%Y-%m-%d %H:%M:%S') # 2021-08-22 15:24:13
         self.__market.dbManager.Connect(db='data', collection=str(self.__timestamp))
         self.__agent.transactionSignal.connect(self.transactionSignal.emit)
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
@@ -45,7 +45,7 @@ class RunnerWorker(QObject):
         # initial timestamp 지정해야 함.
 
         while True:
-            time.sleep(.2 * 1 / self.__simulateSpeed)
+            time.sleep(.5 * 1 / self.__simulateSpeed) #.2
             while self.__simulateState == SimulateState.STOP:
                 time.sleep(.001)
                 pass

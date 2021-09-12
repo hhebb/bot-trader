@@ -34,6 +34,8 @@ class Fonts(Enum):
     SEBANG_REGULAR = '세방고딕 Regular'
     NURI = '한글누리'
     SURROUND_BOLD = '카페24 써라운드'
+    ESAMANRU_BOLD = '이사만루체 Bold'
+    ESAMANRU_MEDIUM = '이사만루체 Medium'
 
 
 class SimulateState(Enum):

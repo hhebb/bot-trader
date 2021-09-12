@@ -59,11 +59,13 @@ class LOBContainer(QFrame):
     def __init__(self):
         super(LOBContainer, self).__init__()
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
+        self.CreateHeader()
         self.__layout = QVBoxLayout()
-        self.__title = QLabel('OrderBook')
-        self.__header = self.CreateHeader()
+        self.__title = QLabel('ORDERBOOK')
+        # self.__header = self.CreateHeader()
         self.__askListWidget = LOBListWidget()
         self.__bidListWidget = LOBListWidget()
         self.__layout.addWidget(self.__title)
@@ -73,17 +75,59 @@ class LOBContainer(QFrame):
         self.setLayout(self.__layout)
 
 
-    def SetProperty(self):
-        pass
+    def SetStyle(self):
+        self.setObjectName(self.__class__.__name__)
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 0px 0px;
+            '''
+        )
+        self.__header.setObjectName('header')
+        self.__header.setStyleSheet(
+            f'''
+                border-style: none none solid none;
+                border-width: 1px;
+                border-color: white;
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 0px;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
 
     def CreateHeader(self):
-        header = QFrame()
+        self.__header = QFrame()
+        self.__priceLabel = QLabel('PRICE')
+        self.__amountLabel = QLabel('AMOUNT')
+
         headerLayout = QHBoxLayout()
-        headerLayout.addWidget(QLabel('price'))
+        headerLayout.addWidget(self.__priceLabel)
         headerLayout.addSpacerItem(QSpacerItem(50, 20)) # w h
-        headerLayout.addWidget(QLabel('amount'))
-        header.setLayout(headerLayout)
-        return header
+        headerLayout.addWidget(self.__amountLabel)
+        self.__header.setLayout(headerLayout)
 
     def Update(self, askData: dict, bidData: dict):
         # 최소한의 전처리를 하고 보내줄까??
@@ -110,45 +154,46 @@ class LOBListWidget(QFrame):
     def SetStyle(self):
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.DARK_PANEL.value
-        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
-                           'border-color: red;'
-                           )
+        r, g, b = namespace.ColorCode.DARK_MIDDLE.value
+        # self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+        #                    )
 
         bar = QScrollBar()
         bar.setStyleSheet(
-            '''QScrollBar:vertical {
+            f'''QScrollBar:vertical {{
                         border: 0px solid #999999;
-                        background:white;
+                        border-radius: 10px;
+                        background-color: white;
                         width:10px;    
                         margin: 0px 0px 0px 0px;
-                    }
-                    QScrollBar::handle:vertical {         
+                    }}
+                    QScrollBar::handle:vertical {{         
     
                         min-height: 0px;
                           border: 0px solid red;
                         border-radius: 5px;
                         background-color: black;
-                    }
-                    QScrollBar::add-line:vertical {       
+                    }}
+                    QScrollBar::add-line:vertical {{       
                         height: 0px;
                         subcontrol-position: bottom;
                         subcontrol-origin: margin;
-                    }
-                    QScrollBar::sub-line:vertical {
+                    }}
+                    QScrollBar::sub-line:vertical {{
                         height: 0 px;
                         subcontrol-position: top;
                         subcontrol-origin: margin;
-                    }'''
+                    }}
+            '''
         )
         self.__listWidget.setVerticalScrollBar(bar)
 
 
-
     def AddRow(self, price, amount):
+        # item 의 사이즈는 꼭 여기서 지정?
         item = QListWidgetItem()
         custom_widget = LOBItem(price, amount)
-        item.setSizeHint(custom_widget.sizeHint())
+        item.setSizeHint(QSize(0, 30))#(custom_widget.sizeHint())
         self.__listWidget.addItem(item)
         self.__listWidget.setItemWidget(item, custom_widget)
 
@@ -159,11 +204,6 @@ class LOBListWidget(QFrame):
     def Update(self, data: dict):
         # clear
         self.Clear()
-
-        # for i in reversed(range(self.askLayout.count())):
-        #     rm = self.askLayout.itemAt(i).widget()
-        #     self.askLayout.removeWidget(rm)
-        #     rm.setParent(None)
 
         for price, order in reversed(data.items()):
             if self.__listWidget.count() >= 5:
@@ -182,7 +222,7 @@ class LOBItem(QFrame):
     def InitUI(self):
         self.__layout = QHBoxLayout()
         self.__priceLabel = QLabel(str(self.__price))
-        self.__bar = BaseBar()
+        self.__bar = BaseBar(self.__amount)
         self.__amountLabel = QLabel(str(self.__amount))
         self.__layout.addWidget(self.__priceLabel)
         self.__layout.addWidget(self.__bar)
@@ -190,24 +230,30 @@ class LOBItem(QFrame):
         self.setLayout(self.__layout)
 
     def SetStyle(self):
-        self.setFixedSize(500, 40)
         self.setObjectName('LOBItem')
         self.setStyleSheet(
+            f'''
+                border-style: none none solid none;
+                border-color: rgb(50, 50, 50);
+                border-width: 1px;
+                border-radius: 0px;
+                margin: 0px 0px;
             '''
-                QFrame#LOBItem {
-                    border-style: solid none none none;
-                    border-color: white;
-                    border-width: 1px;
-                    margin: 5px 50px;
-                    padding: 0px 20px;
-
-                }
+        )
+        self.__priceLabel.setStyleSheet(
             '''
-            # 'QFrame'
-            # 'border-style: solid none;'
-            # 'border-color: white;'
-            # 'border-width: 2px;'
-            # 'border-radius: 10px'
+                border-style: none;
+            '''
+        )
+        self.__bar.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
         )
 
 
@@ -215,8 +261,9 @@ class BaseBar(QFrame):
     '''
         LOB item 에 amount 수량 시각화하는 bar.
     '''
-    def __init__(self):
+    def __init__(self, amount):
         super(BaseBar, self).__init__()
+        self.__amount = amount
         self.InitUI()
 
     def InitUI(self):
@@ -226,24 +273,27 @@ class BaseBar(QFrame):
     def paintEvent(self, a0: QtGui.QPaintEvent) -> None:
         qp = QtGui.QPainter()
         qp.begin(self)
-        self.Draw(a0, qp, 40)
+        length = self.__amount / 1000
+        self.Draw(a0, qp, length)
         qp.end()
 
     def Draw(self, event, qp, w):
-        qp.setPen(QtGui.QColor(168, 34, 3))
+        qp.setPen(QtGui.QColor(200, 100, 3))
         qp.setBrush(QBrush(Qt.red, Qt.SolidPattern))
-        qp.drawRect(0, 0, w, 20) # x y w h
+        qp.drawRect(0, 0, w, 100) # x y w h
 
 
 class TransactionContainer(QFrame):
     def __init__(self):
         super(TransactionContainer, self).__init__()
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
+        self.CreateHeader()
         self.__layout = QVBoxLayout()
-        self.__title = QLabel('Transaction')
-        self.__header = self.CreateHeader()
+        self.__title = QLabel('TRANSACTION')
+        # self.__header = self.CreateHeader()
         self.__transactionListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
@@ -251,18 +301,102 @@ class TransactionContainer(QFrame):
 
         self.setLayout(self.__layout)
 
-        for i in range(5):
-            self.AddRow(0, 0, 0, 0)
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 2px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 0px 0px;
+            '''
+        )
+        self.__header.setStyleSheet(
+            f'''
+                        border-style: none none solid none;
+                        border-width: 1px;
+                        border-color: white;
+                        background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                        border-radius: 0px;
+                    '''
+        )
+
+        bar = QScrollBar()
+        bar.setStyleSheet(
+            f'''QScrollBar:vertical {{
+                           border: 0px solid #999999;
+                           border-radius: 10px;
+                           background-color: white;
+                           width:10px;    
+                           margin: 0px 0px 0px 0px;
+                       }}
+                       QScrollBar::handle:vertical {{         
+
+                           min-height: 0px;
+                             border: 0px solid red;
+                           border-radius: 5px;
+                           background-color: black;
+                       }}
+                       QScrollBar::add-line:vertical {{       
+                           height: 0px;
+                           subcontrol-position: bottom;
+                           subcontrol-origin: margin;
+                       }}
+                       QScrollBar::sub-line:vertical {{
+                           height: 0 px;
+                           subcontrol-position: top;
+                           subcontrol-origin: margin;
+                       }}
+               '''
+        )
+        self.__stampLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__positionLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__transactionListWidget.setVerticalScrollBar(bar)
 
     def CreateHeader(self):
-        header = QFrame()
+        self.__header = QFrame()
+        self.__stampLabel = QLabel('stamp')
+        self.__priceLabel = QLabel('price')
+        self.__positionLabel = QLabel('position')
+        self.__amountLabel = QLabel('amount')
         layout = QHBoxLayout()
-        layout.addWidget(QLabel('stamp'))
-        layout.addWidget(QLabel('price'))
-        layout.addWidget(QLabel('position'))
-        layout.addWidget(QLabel('amount'))
-        header.setLayout(layout)
-        return header
+        layout.addWidget(self.__stampLabel)
+        layout.addWidget(self.__priceLabel)
+        layout.addWidget(self.__positionLabel)
+        layout.addWidget(self.__amountLabel)
+        self.__header.setLayout(layout)
+        # return header
 
     def AddRow(self, stamp, price, amount, order):
         item = QListWidgetItem()
@@ -812,29 +946,29 @@ class Window(QFrame):
         self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
                            'border-style: hidden;'
                            # 'border-radius: 20px;'
-                           'margin: 1px;'
+                           # 'margin: 1px;'
                            # 'padding: 5px'
                            )
 
-    def SetGlobalStyle(self):
-        '''
-            global style setting.
-        '''
-
-        self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
-        self.setLineWidth(3)
-        r, g, b = namespace.ColorCode.DARK_BACKGROUND.value
-        self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
-                           'border-color: red;'
-                           'color: white;'
-                           # f"font: 8pt '{namespace.Fonts.SEBANG_BOLD.value}';"
-                           # 'font-weight: bold;'
-                           # 'letter-spacing: 1.0px;'
-                           'border-style: hidden;'
-                           # 'border-radius: 20px;'
-                           # 'margin: 5px;'
-                           # 'padding: 5px'
-                           )
+    # def SetGlobalStyle(self):
+    #     '''
+    #         global style setting.
+    #     '''
+    #
+    #     self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
+    #     self.setLineWidth(3)
+    #     r, g, b = namespace.ColorCode.DARK_BACKGROUND.value
+    #     self.setStyleSheet(f'background-color: rgb({str(r)}, {str(g)}, {str(b)});'
+    #                        'border-color: red;'
+    #                        'color: white;'
+    #                        # f"font: 8pt '{namespace.Fonts.SEBANG_BOLD.value}';"
+    #                        # 'font-weight: bold;'
+    #                        # 'letter-spacing: 1.0px;'
+    #                        'border-style: hidden;'
+    #                        # 'border-radius: 20px;'
+    #                        # 'margin: 5px;'
+    #                        # 'padding: 5px'
+    #                        )
 
     # slot. step by synchronized signal.
     def RecvMarketData(self, ask, bid, trans, ticker):

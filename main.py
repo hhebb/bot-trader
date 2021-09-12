@@ -14,7 +14,7 @@ def main():
     window = QMainWindow()
     window.setGeometry(100, 100, 200, 400)
     window.setStyleSheet(
-        f"font: 8pt '{namespace.Fonts.SEBANG_BOLD.value}';"
+        f"font: 10pt '{namespace.Fonts.ESAMANRU_MEDIUM.value}';"
         'font-weight: bold;'
         'letter-spacing: 1.0px;'
         'color: white;'
