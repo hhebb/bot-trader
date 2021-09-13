@@ -438,10 +438,15 @@ class TransactionItem(QFrame):
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
-        self.__layout.addWidget(QLabel(str(self.__stamp)))
-        self.__layout.addWidget(QLabel(str(self.__price)))
-        self.__layout.addWidget(QLabel(str(self.__amount)))
-        self.__layout.addWidget(QLabel(str(self.__order)))
+        self.__stampLabel = QLabel(str(self.__stamp))
+        self.__priceLabel = QLabel(str(self.__price))
+        self.__amountLabel = QLabel(str(self.__amount))
+        self.__orderLabel = QLabel(str(self.__order))
+
+        self.__layout.addWidget(self.__stampLabel)
+        self.__layout.addWidget(self.__priceLabel)
+        self.__layout.addWidget(self.__amountLabel)
+        self.__layout.addWidget(self.__orderLabel)
 
         # self.setStyleSheet('background: white')
         self.setLayout(self.__layout)
@@ -449,10 +454,41 @@ class TransactionItem(QFrame):
     def SetStyle(self):
         self.setStyleSheet(
             f'''
-                        border-radius: 0px;
+                        border-style: none none solid none;
+                        font-size: 10px;
+                        border-color: rgb(50, 50, 50);
+                        border-width: 1px;
                         margin: 0px 0px;
+                        border-radius: 0px;
                     '''
         )
+        self.__stampLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__orderLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+
+        # self.setStyleSheet(
+        #     f'''
+        #                 border-radius: 0px;
+        #                 margin: 0px 0px;
+        #             '''
+        # )
 
     def mousePressEvent(self, a0: QtGui.QMouseEvent) -> None:
         print('clicked')
@@ -467,10 +503,12 @@ class CandleChartContainer(QFrame):
     def __init__(self):
         super(CandleChartContainer, self).__init__()
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
-        self.__layout = QHBoxLayout()
-        self.__title = QLabel('CandleChart')
+        self.__layout = QVBoxLayout()
+        self.__title = QLabel('CANDLE CHART')
+
         # candle series
         self.__candleSeries = QCandlestickSeries()
         self.__candleSeries.setIncreasingColor(Qt.red)
@@ -478,6 +516,7 @@ class CandleChartContainer(QFrame):
 
         # chart
         self.__chart = QChart()
+        self.__chart.setTitle('XRP')
         self.__chart.addSeries(self.__candleSeries)
         self.__chart.createDefaultAxes()
         self.__chart.legend().hide()
@@ -489,6 +528,28 @@ class CandleChartContainer(QFrame):
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__chartView)
         self.setLayout(self.__layout)
+
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
+        # self.__chart.setBackgroundPen(QColor(255, 0, 0))
+        self.__chart.setBackgroundBrush(QColor(30, 30, 30))
 
     def Draw(self, tickChart: list, volumeChart: list):
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
@@ -539,7 +600,7 @@ class OrderListContainer(QFrame):
     def InitUI(self):
         self.CreateHeader()
         self.__layout = QVBoxLayout()
-        self.__title = QLabel('Order')
+        self.__title = QLabel('ORDER')
         self.__orderListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
@@ -558,10 +619,10 @@ class OrderListContainer(QFrame):
         r, g, b = namespace.ColorCode.DARK_PANEL.value
         self.setStyleSheet(
             f'''
-                        background-color: rgb({str(r)}, {str(g)}, {str(b)});
-                        border-radius: 10px;
-                        margin: 5px;
-                    '''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
         )
         self.__title.setStyleSheet(
             '''
@@ -609,7 +670,6 @@ class OrderListContainer(QFrame):
         )
         self.__orderListWidget.setStyleSheet(
             f'''
-                background-color: rgb(40, 40, 40);
                 border-radius: 0px;
             '''
         )
@@ -688,12 +748,10 @@ class OrderItem(QFrame):
         r, g, b = namespace.ColorCode.DARK_MIDDLE.value
         self.setStyleSheet(
             f'''
-                background-color: rgb({str(r)}, {str(g)}, {str(b)});
                 border-style: none none solid none;
                 font-size: 10px;
                 border-color: rgb(50, 50, 50);
                 border-width: 1px;
-                border-radius: 5px;
                 margin: 1px 0px;
             '''
         )
@@ -744,7 +802,7 @@ class LedgerListContainer(QFrame):
     def InitUI(self):
         self.CreateHeader()
         self.__layout = QVBoxLayout()
-        self.__title = QLabel('Ledger')
+        self.__title = QLabel('LEDGER')
         self.CreateHeader()
         self.__ledgerListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
@@ -803,7 +861,6 @@ class LedgerListContainer(QFrame):
         )
         self.__ledgerListWidget.setStyleSheet(
             f'''
-                background-color: rgb(40, 40, 40);
                 border-radius: 0px;
             '''
         )
@@ -840,6 +897,7 @@ class LedgerItem(QFrame):
         self.__pair = pair
         self.__amount = amount
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
@@ -849,16 +907,39 @@ class LedgerItem(QFrame):
         self.__layout.addWidget(self.__amountLabel)
         self.setLayout(self.__layout)
 
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_MIDDLE.value
+        self.setStyleSheet(
+            f'''
+                border-style: none none solid none;
+                font-size: 10px;
+                border-color: rgb(50, 50, 50);
+                border-width: 1px;
+                margin: 1px 0px;
+            '''
+        )
+        self.__pairLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+
 
 class HistoryListContainer(QFrame):
     def __init__(self):
         super(HistoryListContainer, self).__init__()
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
+        self.CreateHeader()
         self.__layout = QVBoxLayout()
-        self.__title = QLabel('History')
-        self.__header = self.CreateHeader()
+        self.__title = QLabel('HISTORY')
         self.__historyListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
@@ -876,36 +957,136 @@ class HistoryListContainer(QFrame):
                            'border-color: red;'
                            )
 
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
+        self.__header.setObjectName('header')
+        self.__header.setStyleSheet(
+            f'''
+                border-style: none none solid none;
+                border-width: 1px;
+                border-color: white;
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 0px;
+            '''
+        )
+        self.__pairLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__positionLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                font-size: 10px;
+                border: none;
+            '''
+        )
+
     def CreateHeader(self):
-        header = QFrame()
+        self.__header = QFrame()
+        self.__pairLabel = QLabel('PAIR')
+        self.__positionLabel = QLabel('POSITION')
+        self.__priceLabel = QLabel('PRICE')
+        self.__amountLabel = QLabel('AMOUNT')
         layout = QHBoxLayout()
-        layout.addWidget(QLabel('pair'))
-        layout.addWidget(QLabel('position'))
-        layout.addWidget(QLabel('price'))
-        layout.addWidget(QLabel('amount'))
-        header.setLayout(layout)
-        return header
+        layout.addWidget(self.__pairLabel)
+        layout.addWidget(self.__positionLabel)
+        layout.addWidget(self.__priceLabel)
+        layout.addWidget(self.__amountLabel)
+        self.__header.setLayout(layout)
+        # return header
 
     def AddRow(self):
         item = QListWidgetItem()
-        custom_widget = HistoryItem()
+        custom_widget = HistoryItem('xrp', 'buy', '1000', '100')
         item.setSizeHint(custom_widget.sizeHint())
         self.__historyListWidget.addItem(item)
         self.__historyListWidget.setItemWidget(item, custom_widget)
 
 
 class HistoryItem(QFrame):
-    def __init__(self):
+    def __init__(self, pair, position, price, amount):
         super(HistoryItem, self).__init__()
+        self.__pair = pair
+        self.__position = position
+        self.__price = price
+        self.__amount = amount
         self.InitUI()
+        self.SetStyle()
 
     def InitUI(self):
+        self.__pairLabel = QLabel(str(self.__pair))
+        self.__positionLabel = QLabel(str(self.__position))
+        self.__priceLabel = QLabel(str(self.__price))
+        self.__amountLabel = QLabel(str(self.__amount))
         self.__layout = QHBoxLayout()
-        self.__layout.addWidget(QLabel('pair'))
-        self.__layout.addWidget(QLabel('position'))
-        self.__layout.addWidget(QLabel('price'))
-        self.__layout.addWidget(QLabel('amount'))
+        self.__layout.addWidget(self.__pairLabel)
+        self.__layout.addWidget(self.__positionLabel)
+        self.__layout.addWidget(self.__priceLabel)
+        self.__layout.addWidget(self.__amountLabel)
         self.setLayout(self.__layout)
+
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_MIDDLE.value
+        self.setStyleSheet(
+            f'''
+                border-style: none none solid none;
+                font-size: 10px;
+                border-color: rgb(50, 50, 50);
+                border-width: 1px;
+                border-radius: 0px;
+                margin: 0px 0px;
+            '''
+        )
+        self.__pairLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__positionLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__priceLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
+        self.__amountLabel.setStyleSheet(
+            '''
+                border-style: none;
+            '''
+        )
 
 
 class ManualOrderContainer(QFrame):
@@ -923,19 +1104,20 @@ class ManualOrderContainer(QFrame):
         super(ManualOrderContainer, self).__init__()
         self.__manualOrderWorker = manualOrderWorker
         self.InitUI()
+        self.SetStyle()
         self.SignalConnect()
 
     def InitUI(self):
         self.__layout = QGridLayout()
-        self.__title = QLabel('Manual Order')
-        self.__pairLabel = QLabel('pair')
-        self.__priceLabel = QLabel('price')
-        self.__amountLabel = QLabel('amount')
+        self.__title = QLabel('MANUAL ORDER')
+        self.__pairLabel = QLabel('PAIR')
+        self.__priceLabel = QLabel('PRICE')
+        self.__amountLabel = QLabel('AMOUNT')
         self.__pairText = QLineEdit()
         self.__priceText = QLineEdit()
         self.__amountText = QLineEdit()
-        self.__sellButton = QPushButton('sell')
-        self.__buyButton = QPushButton('buy')
+        self.__sellButton = QPushButton('SELL')
+        self.__buyButton = QPushButton('BUY')
 
         self.__layout.addWidget(self.__title, 0, 0)
         self.__layout.addWidget(self.__pairLabel, 1, 0)
@@ -949,6 +1131,68 @@ class ManualOrderContainer(QFrame):
 
         self.setLayout(self.__layout)
 
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
+        r, g, b = namespace.ColorCode.DARK_MIDDLE.value
+        self.__pairText.setPlaceholderText('enter pair')
+        self.__pairText.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 5px;
+                padding: 5px;
+            '''
+        )
+        self.__priceText.setPlaceholderText('enter price')
+        self.__priceText.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 5px;
+                padding: 5px;
+            '''
+        )
+        self.__amountText.setPlaceholderText('enter amount')
+        self.__amountText.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 5px;
+                padding: 5px;
+            '''
+        )
+        self.__sellButton.setMinimumSize(QSize(80, 40))
+        self.__sellButton.setStyleSheet(
+            '''
+                background-color: red;
+                border-radius: 10px;
+                padding: 5px;
+                color: black;
+            '''
+        )
+        self.__buyButton.setMinimumSize(QSize(80, 40))
+        self.__buyButton.setStyleSheet(
+            '''
+                background-color: green;
+                border-radius: 10px;
+                padding: 5px;
+                color: black;
+            '''
+        )
 
     def SignalConnect(self):
         self.__sellButton.clicked.connect(self.SellRequestHandler)
@@ -974,6 +1218,7 @@ class UserStatusContainer(QFrame):
     def __init__(self):
         super(UserStatusContainer, self).__init__()
         self.InitUI()
+        self.SetStyle()
         self.InitializeData()
 
     def InitUI(self):
@@ -999,6 +1244,26 @@ class UserStatusContainer(QFrame):
         self.__layout.addWidget(self.__countText, 5, 1)
 
         self.setLayout(self.__layout)
+
+    def SetStyle(self):
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
 
     def InitializeData(self):
         self.__nameText.setText('minsu')
@@ -1072,9 +1337,13 @@ class Window(QFrame):
         self.__chart = CandleChartContainer()
         self.__lob = LOBContainer()
         self.__transaction = TransactionContainer()
+
+        self.__marketDataLayout = QHBoxLayout()
+        self.__marketDataLayout.addWidget(self.__lob)
+        self.__marketDataLayout.addWidget(self.__transaction)
+
         self.__marketLayout.addWidget(self.__chart)
-        self.__marketLayout.addWidget(self.__lob)
-        self.__marketLayout.addWidget(self.__transaction)
+        self.__marketLayout.addLayout(self.__marketDataLayout)
 
         self.__userLayout = QVBoxLayout()
         self.__manualOrder = ManualOrderContainer(self.__manualOrderWorker)
@@ -1089,8 +1358,8 @@ class Window(QFrame):
 
         self.__userStatus = UserStatusContainer()
         self.__userLayout.addWidget(self.__manualOrder)
-        self.__userLayout.addLayout(self.__userBalanceLayout)
         self.__userLayout.addWidget(self.__userStatus)
+        self.__userLayout.addLayout(self.__userBalanceLayout)
 
         self.__mainLayout.addLayout(self.__marketLayout)
         self.__mainLayout.addLayout(self.__userLayout)

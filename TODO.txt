@@ -8,10 +8,13 @@ TODO
 * start, pause, step, speed control 기능 추가.
 * cancel 할 때 쓸모없는 signal 지우기.
 * 자동 주문 시 signal 연결하기.
-* 디자인 완성하기. css file 만들기?
-- ledger balance 에 단순하게 쌓지말고, order 단위로 관리해야함. id 부여해서. 마켓메이킹에 써야함.
-- 거래소 추가
+- 디자인 완성하기. css file 만들기?
+- 드랍다운으로 DB 선택하도록 만들기.
+- 시뮬레이션 안정화.
+- User 통계 완성하기.
 - core data 재정비.
 - DB, collection name 정리하기.
 - 수수료 적용.
 - 캔들 차트 초단위 표현 안되는 거 어카지?
+- ledger balance 에 단순하게 쌓지말고, order 단위로 관리해야함. id 부여해서. 마켓메이킹에 써야함.
+- 거래소 추가
