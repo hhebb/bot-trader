@@ -66,8 +66,8 @@ class LOBContainer(QFrame):
         self.__layout = QVBoxLayout()
         self.__title = QLabel('ORDERBOOK')
         # self.__header = self.CreateHeader()
-        self.__askListWidget = LOBListWidget()
-        self.__bidListWidget = LOBListWidget()
+        self.__askListWidget = LOBListWidget(lobType=namespace.LOBType.ASK)
+        self.__bidListWidget = LOBListWidget(lobType=namespace.LOBType.BID)
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
         self.__layout.addWidget(self.__askListWidget)
@@ -139,8 +139,9 @@ class LOBListWidget(QFrame):
     '''
         listWidget 을 포함하는 base class 로 만들어야 할 듯.
     '''
-    def __init__(self):
+    def __init__(self, lobType: namespace.LOBType):
         super(LOBListWidget, self).__init__()
+        self.__type = lobType
         self.InitUI()
         self.SetStyle()
 
@@ -191,12 +192,12 @@ class LOBListWidget(QFrame):
         self.__listWidget.setVerticalScrollBar(bar)
 
 
-    def AddRow(self, price, amount):
+    def AddRow(self, price, amount, rowCount):
         # item 의 사이즈는 꼭 여기서 지정?
         item = QListWidgetItem()
         custom_widget = LOBItem(price, amount)
         item.setSizeHint(QSize(0, 30))#(custom_widget.sizeHint())
-        self.__listWidget.addItem(item)
+        self.__listWidget.insertItem(rowCount, item)
         self.__listWidget.setItemWidget(item, custom_widget)
 
     def Clear(self):
@@ -204,13 +205,30 @@ class LOBListWidget(QFrame):
         self.__listWidget.clear()
 
     def Update(self, data: dict):
+        '''
+            lob 는 오름차순으로 들어옴.
+            ASK 는 데이터는 그대로, 추가는 역으로 해줘야함.
+            BID 는 데이터는 역으로, 추가는 그대로 해줘야함.
+        '''
         # clear
         self.Clear()
 
-        for price, order in reversed(data.items()):
-            if self.__listWidget.count() >= 5:
-                break
-            self.AddRow(order.price, order.amount)
+        if self.__type.value == namespace.LOBType.ASK.value:
+            for price, order in data.items():
+                if self.__listWidget.count() >= 5:
+                    break
+                self.AddRow(order.price, order.amount, 0)
+
+        elif self.__type.value == namespace.LOBType.BID.value:
+            for price, order in reversed(data.items()):
+                if self.__listWidget.count() >= 5:
+                    break
+                self.AddRow(order.price, order.amount, self.__listWidget.count())
+
+        # for price, order in items:
+        #     if self.__listWidget.count() >= 5:
+        #         break
+        #     self.AddRow(order.price, order.amount)
 
 
 class LOBItem(QFrame):
@@ -295,7 +313,6 @@ class TransactionContainer(QFrame):
         self.CreateHeader()
         self.__layout = QVBoxLayout()
         self.__title = QLabel('TRANSACTION')
-        # self.__header = self.CreateHeader()
         self.__transactionListWidget = QListWidget()
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__header)
@@ -454,13 +471,13 @@ class TransactionItem(QFrame):
     def SetStyle(self):
         self.setStyleSheet(
             f'''
-                        border-style: none none solid none;
-                        font-size: 10px;
-                        border-color: rgb(50, 50, 50);
-                        border-width: 1px;
-                        margin: 0px 0px;
-                        border-radius: 0px;
-                    '''
+                border-style: none none solid none;
+                font-size: 10px;
+                border-color: rgb(50, 50, 50);
+                border-width: 1px;
+                margin: 0px 0px;
+                border-radius: 0px;
+            '''
         )
         self.__stampLabel.setStyleSheet(
             '''
@@ -703,7 +720,7 @@ class OrderListContainer(QFrame):
         # print('order', len(data))
         self.__orderListWidget.clear()
         for orderId, order in data.items():
-            print('rendering order', orderId)
+            # print('rendering order', orderId)
             pair = order['pair']
             position = order['position']
             price = order['price']
@@ -946,10 +963,6 @@ class HistoryListContainer(QFrame):
         self.__layout.addWidget(self.__historyListWidget)
         self.setLayout(self.__layout)
 
-        for i in range(5):
-            self.AddRow()
-
-        #
         # self.setFrameStyle(QFrame.Panel | QFrame.Sunken)
         # self.setLineWidth(3)
         r, g, b = namespace.ColorCode.DARK_PANEL.value
@@ -986,6 +999,34 @@ class HistoryListContainer(QFrame):
                 border-radius: 0px;
             '''
         )
+        bar = QScrollBar()
+        bar.setStyleSheet(
+            f'''QScrollBar:vertical {{
+                                   border: 0px solid #999999;
+                                   border-radius: 10px;
+                                   background-color: white;
+                                   width:10px;    
+                                   margin: 0px 0px 0px 0px;
+                               }}
+                               QScrollBar::handle:vertical {{         
+
+                                   min-height: 0px;
+                                     border: 0px solid red;
+                                   border-radius: 5px;
+                                   background-color: black;
+                               }}
+                               QScrollBar::add-line:vertical {{       
+                                   height: 0px;
+                                   subcontrol-position: bottom;
+                                   subcontrol-origin: margin;
+                               }}
+                               QScrollBar::sub-line:vertical {{
+                                   height: 0 px;
+                                   subcontrol-position: top;
+                                   subcontrol-origin: margin;
+                               }}
+                       '''
+        )
         self.__pairLabel.setStyleSheet(
             '''
                 font-size: 10px;
@@ -1010,6 +1051,7 @@ class HistoryListContainer(QFrame):
                 border: none;
             '''
         )
+        self.__historyListWidget.setVerticalScrollBar(bar)
 
     def CreateHeader(self):
         self.__header = QFrame()
@@ -1025,12 +1067,29 @@ class HistoryListContainer(QFrame):
         self.__header.setLayout(layout)
         # return header
 
-    def AddRow(self):
+    def AddRow(self, pair, position, price, amount):
         item = QListWidgetItem()
-        custom_widget = HistoryItem('xrp', 'buy', '1000', '100')
+        custom_widget = HistoryItem(pair, position, price, amount)
         item.setSizeHint(custom_widget.sizeHint())
         self.__historyListWidget.addItem(item)
         self.__historyListWidget.setItemWidget(item, custom_widget)
+
+    def Clear(self):
+        # 루프 돌면서 하나하나 지워야 하는가?
+        self.__historyListWidget.clear()
+
+    def Update(self, data: list):
+        self.Clear()
+        self.__historyListWidget.clear()
+        for order in reversed(data):
+            if self.__historyListWidget.count() >= 5:
+                break
+            # print('rendering order', orderId)
+            pair = order['pair']
+            position = order['position']
+            price = order['price']
+            amount = order['amount']
+            self.AddRow(pair, position, price, amount)
 
 
 class HistoryItem(QFrame):
@@ -1223,11 +1282,11 @@ class UserStatusContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QGridLayout()
-        self.__title = QLabel('Status')
-        self.__nameLabel = QLabel('User: ')
-        self.__assetLabel = QLabel('Initial asset: ')
-        self.__evalLabel = QLabel('Evaluation: ')
-        self.__countLabel = QLabel('Trade count: ')
+        self.__title = QLabel('STATUS')
+        self.__nameLabel = QLabel('USER: ')
+        self.__assetLabel = QLabel('INITIAL ASSET: ')
+        self.__evalLabel = QLabel('EVALUATION: ')
+        self.__countLabel = QLabel('TRADE COUNT: ')
         self.__nameText = QLabel()
         self.__assetText = QLabel()
         self.__evalText = QLabel()
@@ -1271,6 +1330,9 @@ class UserStatusContainer(QFrame):
         self.__evalText.setText('10000')
         self.__countText.setText('')
 
+    def Update(self, initAsset, totalAsset, ledger, orders, history):
+        self.__evalText.setText(str(totalAsset))
+
 
 # assembly. Top level.
 class Window(QFrame):
@@ -1284,6 +1346,7 @@ class Window(QFrame):
             * RecvAgentInfo: agent 의 자산 상태 등 data 를 수신.
 
         * manual order 를 worker 로 보낼 땐 함수 직접 호출, worker 에서 데이터 받을 땐 signal.
+        * automatic order signal 은 worker 에서 step signal 과 통합함.
     '''
     # stepRequest = pyqtSignal()
 
@@ -1303,9 +1366,9 @@ class Window(QFrame):
         self.__runnerThread.started.connect(self.__runnerWorker.Simulate)
         self.__runnerWorker.stepped.connect(self.RecvMarketData)
         self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo) # ??
-        self.__runnerWorker.transactionSignal.connect(self.RecvAgentData)
+        self.__runnerWorker.transactionSignal.connect(self.RecvAgentTransactData)
         # 시스템에 의해 만들어지는 자동 주문 처리.ㄱ
-        self.__runnerWorker.automaticOrderSignal.connect(self.RecvAgentData)
+        # self.__runnerWorker.automaticOrderSignal.connect(self.RecvAgentData)
 
         self.__manualOrderThread.started.connect(self.__manualOrderWorker.run)
         self.__manualOrderWorker.manualOrderSignal.connect(self.RecvAgentData)
@@ -1416,6 +1479,14 @@ class Window(QFrame):
         # self.tickerPanel.Draw(tickChart, volumeChart)
         self.__chart.Draw(tickChart, volumeChart)
 
+    def RecvAgentTransactData(self, orders: dict, ledger: dict, history: list):
+        '''
+            Agent data Recv.
+        '''
+        self.__order.Update(orders)
+        self.__ledger.Update(ledger)
+        self.__history.Update(history)
+
     def RecvAgentData(self, orders: dict, ledger: dict):
         '''
             Agent data Recv.
@@ -1423,16 +1494,11 @@ class Window(QFrame):
         self.__order.Update(orders)
         self.__ledger.Update(ledger)
 
-    # def RecvManualOrder(self, orders: dict, ledger: dict):
-    #     print('manual order')
-    #     self.__order.Update(orders)
-    #     # self.__ledger.Update(ledger)
-
     def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
         '''
             Agent Status Recv.
         '''
-        #self.userStatusPanel.Recv(initAsset, totalAsset, ledger, orders, history)
+        self.__userStatus.Update(initAsset, totalAsset, ledger, orders, history)
         pass
 
     # control

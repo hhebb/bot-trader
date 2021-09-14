@@ -1,10 +1,13 @@
+import namespace
+
+
 class OrderBook:
     '''
         OrderBook.__LOB = {price: LimitOrder, ...}
         LimitOrder = object(price, amount, count)
 
     '''
-    def __init__(self, position):
+    def __init__(self, position: namespace.LOBType):
         self.__type = position
         self.__LOB = dict()
         # self.__LOB_list = list()
@@ -15,6 +18,9 @@ class OrderBook:
         # 또는 주기적으로 초기화
 
         self.__LOB = dict()
+        if self.__type.value == namespace.LOBType.BID.value:
+            snapshot = reversed(snapshot)
+
         for d in snapshot:
             price = float(d['price'])
             amount = float(d['quantity'])

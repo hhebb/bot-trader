@@ -46,3 +46,8 @@ class SimulateState(Enum):
 class SimulateSpeedLimit(Enum):
     UPPER_BOUND = 10
     LOWER_BOUND = 1
+
+
+class LOBType(Enum):
+    ASK = 0
+    BID = 1

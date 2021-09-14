@@ -1,5 +1,6 @@
 import datetime
 
+import namespace
 from Core.OrderBook import OrderBook
 from Core.Transaction import Transaction
 from Core.Ticker import Ticker
@@ -11,8 +12,8 @@ class Market:
         self.dbManager = DBManager()
         self.__pairSymbol = 0
         self.__startTime = 0
-        self.__LOB_ask = OrderBook('ask')
-        self.__LOB_bid = OrderBook('bid')
+        self.__LOB_ask = OrderBook(namespace.LOBType.ASK)
+        self.__LOB_bid = OrderBook(namespace.LOBType.BID)
         self.__transaction = Transaction()
         self.__ticker = Ticker()
         self.__parser = Parser()
@@ -28,12 +29,15 @@ class Market:
             Parse data for use
             save lob, transaction, ticker datas.
             Ready to send these datas.
+
+            snapshot 있으면 주고 없으면 걍 넘어감.
+            snapshot 있으면 통째로 갈아치우고 아니면 추가하여 갱신함.
         '''
         data = self.dbManager.GetRow(timestamp)
         bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = self.__parser.Parse(data)
 
         # lob. snapshot 이 있으면 바로 적용.
-        if bidSnapshot:
+        if bidSnapshot or askSnapshot:
             self.__LOB_bid.SetSnapshot(bidSnapshot)
             self.__LOB_ask.SetSnapshot(askSnapshot)
             # print('> lob snapshot parse')

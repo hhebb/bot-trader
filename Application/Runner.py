@@ -5,21 +5,20 @@ from Core.Agent import Agent
 import time
 from namespace import *
 
+
 class RunnerWorker(QObject):
+    '''
+        * signal
+        * stepped: simulate step 이후 market ask, bid, transaction, ticker 전달.
+        * agentStepSignal: simulate step 이후 asset, eval, ledger, orders, history 전달.
+        * transactionSignal: 거래가 체결되면 GUI 갱신을 위해 user orders, ledger 를 전달.
+    '''
+
     stepped = pyqtSignal(object, object, object, object)
     # 알고리즘이 step 마다 행동을 취하고 emit.
     agentStepSignal = pyqtSignal(object, object, object, object, object)
-    transactionSignal = pyqtSignal(object, object) # orders, ledger
-    automaticOrderSignal = pyqtSignal()
+    transactionSignal = pyqtSignal(object, object, object) # orders, ledger, history
 
-    # 수동으로 조작할 때마다 agent 에서부터 연쇄적으로 emit 함. connect 는 top level GUI 에서.
-    # manualOrderSignal = pyqtSignal(object, object) # order, ledger
-    '''
-        * signal
-            * stepped: simulate step 이후 market ask, bid, transaction, ticker 전달.
-            * agentStepSignal: simulate step 이후 asset, eval, ledger, orders, history 전달.
-            * transactionSignal: 거래가 체결되면 GUI 갱신을 위해 user orders, ledger 를 전달.
-    '''
     def __init__(self):
         super().__init__()
         self.__market = Market()

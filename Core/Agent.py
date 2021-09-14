@@ -4,8 +4,7 @@ from copy import copy
 from PyQt5.QtCore import *
 
 class Agent(QObject):
-    transactionSignal = pyqtSignal(object, object) # orders, ledger
-    automaticOrderSignal = pyqtSignal(object, object) # orders, ledger
+    transactionSignal = pyqtSignal(object, object, object) # orders, ledger, history
 
     '''
         * data structure
@@ -65,11 +64,9 @@ class Agent(QObject):
 
     def AutoSell(self, pair: str, price: float, amount: float):
         self.Sell(pair, price, amount)
-        self.automaticOrderSignal.emit(self.__orders, self.__ledger)
 
     def AutoBuy(self, pair: str, price: float, amount: float):
         self.Buy(pair, price, amount)
-        self.automaticOrderSignal.emit(self.__orders, self.__ledger)
 
     def Cancel(self, orderId: int):
         # 취소 주문. ledger 복원. order 삭제.
@@ -126,7 +123,7 @@ class Agent(QObject):
         # closed order remove from orders
         for key in toRemove:
             del self.__orders[key]
-        self.transactionSignal.emit(self.__orders, self.__ledger)
+        self.transactionSignal.emit(self.__orders, self.__ledger, self.__history)
 
     def GetEvaluation(self, currentPrices: dict):
         # 현재 자산가치 평가. ledger 에서 완전히 체결이 이루어진 상태 기준으로 asset 평가

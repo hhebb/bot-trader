@@ -6,7 +6,7 @@ class Parser:
         self.__manager.Connect()
 
     def Parse(self, data):
-        lob, transaction, lobSnapshot, transactionSnapshot = self.Splitter(data)
+        lob, transaction, lobSnapshot, transactionSnapshot = self.Split(data)
 
         bid = list()
         ask = list()
@@ -26,7 +26,7 @@ class Parser:
         return bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot
 
 
-    def Splitter(self, data):
+    def Split(self, data):
         lob = list()
         transaction = list()
         lobSnapshot = None
