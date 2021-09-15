@@ -2,21 +2,45 @@ import pymongo
 
 
 class DBManager:
-    def __init__(self):
+    '''
+        현재 local 에서만 작동하므로 초기엔 localhost 로 즉시 접속.
+    '''
+
+    def __init__(self, ip='localhost', port=27017):
         # pair
         self.__conn = None
         self.__db = None
         self.__collection = None
         self.pair = None
         self.timestamp = None
-        # self.Connect()
+        self.__Connect(ip, port)
 
-    def Connect(self, ip='localhost', port=27017, db='test', collection='tmp'):
+    def __Connect(self, ip='localhost', port=27017, db='test', collection='tmp'):
         self.__conn = pymongo.MongoClient(ip, port)
-        self.__db = self.__conn.get_database(db)
-        self.__collection = self.__db.get_collection(collection)
+
+        #
         # if db == 'data':
         #     self.pair, self.timestamp = self.__collection.name.split('_')
+
+    def GetCurrentDB(self):
+        return self.__db
+
+    def GetCurrentCollection(self):
+        return self.__collection
+
+    def SetCurrentDB(self, dbName: str):
+        self.__collection = None
+        self.__db = self.__conn.get_database(dbName)
+
+    def SetCurrentCollection(self, collectionName: str):
+        self.__collection = self.__db.get_collection(collectionName)
+
+    def GetDBNames(self):
+        return self.__conn.list_database_names()
+
+    def GetCollectionNames(self, dbName):
+        db = self.__conn.get_database(dbName)
+        return db.list_collection_names()
 
     def GetRow(self, timestamp):
         # find 는 cursor 반환. cursor 는 generator 혹은 iterator.

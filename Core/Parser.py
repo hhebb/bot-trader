@@ -1,9 +1,12 @@
 from  Core.DBManager import DBManager
 
 class Parser:
+    '''
+        거래소마다 각자의 Parser 가 필요함.
+    '''
     def __init__(self):
-        self.__manager = DBManager()
-        self.__manager.Connect()
+        # self.__manager = DBManager()
+        pass
 
     def Parse(self, data):
         lob, transaction, lobSnapshot, transactionSnapshot = self.Split(data)

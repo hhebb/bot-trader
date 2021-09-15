@@ -50,6 +50,70 @@ from Core import Agent
         
 '''
 
+class ControlContainer(QFrame):
+    '''
+        control toolbax container.
+    '''
+    def __init__(self):
+        super(ControlContainer, self).__init__()
+        self.InitUI()
+        self.SetStyle()
+
+    def InitUI(self):
+        pass
+
+
+    def SetStyle(self):
+        self.setMinimumSize(100, 100)
+        self.setStyleSheet(
+            '''
+                border-width: 1px;
+                border-color: white;
+                border-style: solid;
+            '''
+        )
+
+
+class MarketBriefContainer(QFrame):
+    def __init__(self):
+        super(MarketBriefContainer, self).__init__()
+        self.InitUI()
+        self.Setstyle()
+
+    def InitUI(self):
+        pass
+
+    def Setstyle(self):
+        self.setMinimumSize(100, 100)
+        self.setStyleSheet(
+            '''
+                border-width: 1px;
+                border-color: white;
+                border-style: solid;
+            '''
+        )
+
+
+class UserAnalysisContainer(QFrame):
+    def __init__(self):
+        super(UserAnalysisContainer, self).__init__()
+        self.InitUI()
+        self.Setstyle()
+
+    def InitUI(self):
+        pass
+
+    def Setstyle(self):
+        self.setMinimumSize(100, 100)
+        self.setStyleSheet(
+            '''
+                border-width: 1px;
+                border-color: white;
+                border-style: solid;
+            '''
+        )
+
+
 class LOBContainer(QFrame):
     '''
         호가창 통쨰로 가지고 있는 container.
@@ -1178,15 +1242,18 @@ class ManualOrderContainer(QFrame):
         self.__sellButton = QPushButton('SELL')
         self.__buyButton = QPushButton('BUY')
 
-        self.__layout.addWidget(self.__title, 0, 0)
+        self.__layout.addWidget(self.__title, 0, 0, 1, -1)
         self.__layout.addWidget(self.__pairLabel, 1, 0)
         self.__layout.addWidget(self.__priceLabel, 1, 1)
         self.__layout.addWidget(self.__amountLabel, 1, 2)
         self.__layout.addWidget(self.__pairText, 2, 0)
         self.__layout.addWidget(self.__priceText, 2, 1)
         self.__layout.addWidget(self.__amountText, 2, 2)
-        self.__layout.addWidget(self.__sellButton, 1, 3)
-        self.__layout.addWidget(self.__buyButton, 1, 4)
+        self.__layout.addWidget(self.__sellButton, 1, 3, 2, 1)
+        self.__layout.addWidget(self.__buyButton, 1, 4, 2, 1)
+        self.__layout.setRowStretch(0, 1)
+        self.__layout.setRowStretch(1, 4)
+        self.__layout.setRowStretch(2, 4)
 
         self.setLayout(self.__layout)
 
@@ -1234,7 +1301,7 @@ class ManualOrderContainer(QFrame):
                 padding: 5px;
             '''
         )
-        self.__sellButton.setMinimumSize(QSize(80, 40))
+        self.__sellButton.setMinimumSize(QSize(80, 100))
         self.__sellButton.setStyleSheet(
             '''
                 background-color: red;
@@ -1243,7 +1310,7 @@ class ManualOrderContainer(QFrame):
                 color: black;
             '''
         )
-        self.__buyButton.setMinimumSize(QSize(80, 40))
+        self.__buyButton.setMinimumSize(QSize(80, 100))
         self.__buyButton.setStyleSheet(
             '''
                 background-color: green;
@@ -1394,7 +1461,15 @@ class Window(QFrame):
         button = QPushButton('simulate', self)
         button.clicked.connect(self.start)
 
-        self.__mainLayout = QHBoxLayout()
+        self.__mainLayout = QGridLayout()
+
+        self.__UpperbarLayout = QGridLayout()
+        self.__controlContainer = ControlContainer()
+        self.__marketBriefContainer = MarketBriefContainer()
+        self.__userAnalysisContainer = UserAnalysisContainer()
+        self.__UpperbarLayout.addWidget(self.__controlContainer)
+        self.__UpperbarLayout.addWidget(self.__marketBriefContainer)
+        self.__UpperbarLayout.addWidget(self.__userAnalysisContainer)
 
         self.__marketLayout = QVBoxLayout()
         self.__chart = CandleChartContainer()
@@ -1408,7 +1483,7 @@ class Window(QFrame):
         self.__marketLayout.addWidget(self.__chart)
         self.__marketLayout.addLayout(self.__marketDataLayout)
 
-        self.__userLayout = QVBoxLayout()
+        self.__userLayout = QGridLayout()
         self.__manualOrder = ManualOrderContainer(self.__manualOrderWorker)
 
         self.__userBalanceLayout = QHBoxLayout()
@@ -1420,12 +1495,20 @@ class Window(QFrame):
         self.__userBalanceLayout.addWidget(self.__history)
 
         self.__userStatus = UserStatusContainer()
-        self.__userLayout.addWidget(self.__manualOrder)
-        self.__userLayout.addWidget(self.__userStatus)
-        self.__userLayout.addLayout(self.__userBalanceLayout)
+        self.__userLayout.addWidget(self.__userStatus, 0, 0, 1, 1)
+        self.__userLayout.addWidget(self.__manualOrder, 0, 1, 1, 1)
+        self.__userLayout.addLayout(self.__userBalanceLayout, 1, 0, 1, 2)
+        self.__userLayout.setRowStretch(0, 1)
+        self.__userLayout.setRowStretch(1, 2)
 
-        self.__mainLayout.addLayout(self.__marketLayout)
-        self.__mainLayout.addLayout(self.__userLayout)
+
+        self.__mainLayout.addLayout(self.__UpperbarLayout, 0, 2)
+        self.__mainLayout.addLayout(self.__marketLayout, 0, 0)
+        self.__mainLayout.addLayout(self.__userLayout, 0, 1)
+
+        self.__mainLayout.setColumnStretch(0, 2)
+        self.__mainLayout.setColumnStretch(1, 2)
+        self.__mainLayout.setColumnStretch(2, 1)
 
         self.setLayout(self.__mainLayout)
 

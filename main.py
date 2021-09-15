@@ -19,7 +19,7 @@ def main():
         'letter-spacing: 1.0px;'
         'color: white;'
                          )
-    # window.setWindowFlags(Qt.WindowType.Popup)
+    # window.setWindowFlags(Qt.WindowType.FramelessWindowHint)
 
     # central widget
     w = Window()

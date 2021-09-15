@@ -24,7 +24,8 @@ class RunnerWorker(QObject):
         self.__market = Market()
         self.__agent = Agent(10000)
         self.__timestamp = datetime.datetime.strptime('2021-08-22 15:24:13', '%Y-%m-%d %H:%M:%S') # 2021-09-09 11:48:43
-        self.__market.dbManager.Connect(db='data', collection=str(self.__timestamp))
+        self.__market.dbManager.SetCurrentDB(dbName='data')
+        self.__market.dbManager.SetCurrentCollection(collectionName=str(self.__timestamp))
         self.__agent.transactionSignal.connect(self.transactionSignal.emit)
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
         # self.__pair = self.__market.dbManager.pair
