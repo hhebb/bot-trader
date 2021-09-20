@@ -4,6 +4,8 @@ import pymongo
 class DBManager:
     '''
         현재 local 에서만 작동하므로 초기엔 localhost 로 즉시 접속.
+        생성될 때 connection 만 수행.
+        DB, collection 은 별개로 진행.
     '''
 
     def __init__(self, ip='localhost', port=27017):
@@ -28,7 +30,7 @@ class DBManager:
     def GetCurrentCollection(self):
         return self.__collection
 
-    def SetCurrentDB(self, dbName: str):
+    def SetCurrentDB(self, dbName: str='test'):
         self.__collection = None
         self.__db = self.__conn.get_database(dbName)
 
@@ -38,7 +40,7 @@ class DBManager:
     def GetDBNames(self):
         return self.__conn.list_database_names()
 
-    def GetCollectionNames(self, dbName):
+    def GetCollectionNames(self, dbName: str='test'):
         db = self.__conn.get_database(dbName)
         return db.list_collection_names()
 

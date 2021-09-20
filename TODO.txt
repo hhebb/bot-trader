@@ -1,6 +1,9 @@
 TODO
 
 * UI 체계화 작업. 0 순위. 적당한 UI 계층 추상화 작업. 어쨌든 추상화는 해야함. 상속해서 추가 설정하면 됨.
+- 시작되면 비활성화 하기.
+- 초기화 버튼 추가하기.
+- candle chart redraw 할 때 성능을 위해 덧그리기.
 - 측면바 제작 - 시뮬레이션 컨트롤, DB 선택 등.
 - 시뮬 pause 는 수동 매매 진입, 시뮬 running 은 자동 매매 진입과 동시에 수동 매매 block.
 - 디자인 완성하기. css file 만들기?
@@ -15,4 +18,3 @@ TODO
 - ledger balance 에 단순하게 쌓지말고, order 단위로 관리해야함. id 부여해서. 마켓메이킹에 써야함.
 - 거래소 추가
 - 로깅 모듈 추가.
-* dependency, requirements.txt 작성.

@@ -53,15 +53,39 @@ from Core import Agent
 class ControlContainer(QFrame):
     '''
         control toolbax container.
+        시뮬레이션 시작, 정지, 속도 조절 등.
     '''
-    def __init__(self):
+    def __init__(self, runnerWorker, runnerThread):
         super(ControlContainer, self).__init__()
+        self.__runnerWorker = runnerWorker
+        self.__runnerThread = runnerThread
         self.InitUI()
         self.SetStyle()
 
     def InitUI(self):
-        pass
+        self.__layout = QHBoxLayout()
+        self.__dbselectCombobox = QComboBox()
+        self.__startButton = QPushButton('START')
+        self.__playButton = QPushButton('PLAY')
+        self.__stepButton = QPushButton('STEP')
+        self.__speedUpButton = QPushButton('UP')
+        self.__speedDownButton = QPushButton('DOWN')
 
+        self.SetCombobox()
+        self.__startButton.clicked.connect(self.StartSimulation)
+        self.__playButton.clicked.connect(self.ToggleSimulate)
+        self.__stepButton.clicked.connect(self.SimulateStep)
+        self.__speedUpButton.clicked.connect(self.SpeedUp)
+        self.__speedDownButton.clicked.connect(self.SpeedDown)
+
+        self.__layout.addWidget(self.__dbselectCombobox)
+        self.__layout.addWidget(self.__startButton)
+        self.__layout.addWidget(self.__playButton)
+        self.__layout.addWidget(self.__stepButton)
+        self.__layout.addWidget(self.__speedUpButton)
+        self.__layout.addWidget(self.__speedDownButton)
+
+        self.setLayout(self.__layout)
 
     def SetStyle(self):
         self.setMinimumSize(100, 100)
@@ -72,6 +96,37 @@ class ControlContainer(QFrame):
                 border-style: solid;
             '''
         )
+
+    def SetCombobox(self):
+        dbm = self.__runnerWorker.GetMarket().GetDBManager()
+        colls = dbm.GetCollectionNames(dbName='data')
+        self.__dbselectCombobox.currentIndexChanged.connect(self.ComboboxChangeHandler)
+        for collection in colls:
+            self.__dbselectCombobox.addItem(collection)
+
+    def ComboboxChangeHandler(self):
+        cur = self.__dbselectCombobox.currentIndex()
+
+    def StartSimulation(self):
+        # 시작되면 비활성화 하기.
+        # 초기화 버튼 추가하기.
+        if self.__runnerWorker.GetSimulateState() == namespace.SimulateState.STOP:
+            self.__runnerThread.start()
+            self.__runnerWorker.ToggleSimulateState()
+
+    def ToggleSimulate(self):
+        self.__runnerWorker.ToggleSimulateState()
+
+    def SimulateStep(self):
+        self.__runnerWorker.StopSimulate()
+        self.__runnerWorker.SetReady()
+        self.__runnerWorker.SimulateStep()
+
+    def SpeedUp(self):
+        self.__runnerWorker.SpeedUp()
+
+    def SpeedDown(self):
+        self.__runnerWorker.SpeedDown()
 
 
 class MarketBriefContainer(QFrame):
@@ -1458,18 +1513,16 @@ class Window(QFrame):
         self.SetStyle()
 
     def InitUI(self):
-        button = QPushButton('simulate', self)
-        button.clicked.connect(self.start)
-
         self.__mainLayout = QGridLayout()
 
-        self.__UpperbarLayout = QGridLayout()
-        self.__controlContainer = ControlContainer()
+        self.__sidebarLayout = QGridLayout()
+        self.__controlContainer = ControlContainer(self.__runnerWorker,
+                                                   self.__runnerThread)
         self.__marketBriefContainer = MarketBriefContainer()
         self.__userAnalysisContainer = UserAnalysisContainer()
-        self.__UpperbarLayout.addWidget(self.__controlContainer)
-        self.__UpperbarLayout.addWidget(self.__marketBriefContainer)
-        self.__UpperbarLayout.addWidget(self.__userAnalysisContainer)
+        self.__sidebarLayout.addWidget(self.__controlContainer)
+        self.__sidebarLayout.addWidget(self.__marketBriefContainer)
+        self.__sidebarLayout.addWidget(self.__userAnalysisContainer)
 
         self.__marketLayout = QVBoxLayout()
         self.__chart = CandleChartContainer()
@@ -1502,7 +1555,7 @@ class Window(QFrame):
         self.__userLayout.setRowStretch(1, 2)
 
 
-        self.__mainLayout.addLayout(self.__UpperbarLayout, 0, 2)
+        self.__mainLayout.addLayout(self.__sidebarLayout, 0, 2)
         self.__mainLayout.addLayout(self.__marketLayout, 0, 0)
         self.__mainLayout.addLayout(self.__userLayout, 0, 1)
 
@@ -1586,10 +1639,13 @@ class Window(QFrame):
 
     # control
     def keyPressEvent(self, e: QtGui.QKeyEvent) -> None:
+        if e.key() == Qt.Key_A:
+            # start simulation, and run.
+            self.__runnerThread.start()
+            self.__runnerWorker.ToggleSimulateState()
         if e.key() == Qt.Key_S:
             # toggle run/stop
             self.__runnerWorker.ToggleSimulateState()
-            # self.stepRequest.emit()
         elif e.key() == Qt.Key_D:
             # stepping
             self.__runnerWorker.StopSimulate()
@@ -1602,6 +1658,3 @@ class Window(QFrame):
             # speed down
             self.__runnerWorker.SpeedDown()
 
-    def start(self):
-        # simulate start button
-        self.__runnerThread.start()

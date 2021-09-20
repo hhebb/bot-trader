@@ -34,7 +34,8 @@ class Market:
             snapshot 있으면 통째로 갈아치우고 아니면 추가하여 갱신함.
         '''
         data = self.dbManager.GetRow(timestamp)
-        bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = self.__parser.Parse(data)
+        bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = \
+            self.__parser.Parse(data)
 
         # lob. snapshot 이 있으면 바로 적용.
         if bidSnapshot or askSnapshot:
@@ -74,3 +75,6 @@ class Market:
 
     def GetTicker(self):
         return self.__ticker
+
+    def GetDBManager(self):
+        return self.dbManager
