@@ -10,6 +10,11 @@ from PyQt5.QtGui import QFont, QFontDatabase
 
 import Core.DBManager
 import namespace
+import pandas as pd
+import numpy as np
+
+np.arange(10)
+
 
 '''
 setStyleSheet(QString::fromUtf8("QScrollBar:vertical {"              

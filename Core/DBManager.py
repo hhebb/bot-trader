@@ -24,10 +24,10 @@ class DBManager:
         # if db == 'data':
         #     self.pair, self.timestamp = self.__collection.name.split('_')
 
-    def GetCurrentDB(self):
+    def GetCurrentDB(self) -> pymongo.database.Database:
         return self.__db
 
-    def GetCurrentCollection(self):
+    def GetCurrentCollection(self) -> pymongo.collection.Collection:
         return self.__collection
 
     def SetCurrentDB(self, dbName: str='test'):
@@ -44,9 +44,14 @@ class DBManager:
         db = self.__conn.get_database(dbName)
         return db.list_collection_names()
 
-    def GetRow(self, timestamp):
+    def GetRow(self, timestamp) -> dict:
         # find 는 cursor 반환. cursor 는 generator 혹은 iterator.
         # find_one 은 dict 반환
         query = {'timestamp': {'$eq': timestamp}}
         result = self.__collection.find_one(query)
+        return result
+
+    def GetAllRows(self) -> pymongo.cursor.Cursor:
+        # current collection 의 모든 rows 를 cursor 객체로 가져옴.
+        result = self.__collection.find()
         return result

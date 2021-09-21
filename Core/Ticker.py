@@ -5,6 +5,7 @@ class Ticker:
         tickChart: [CandleBar(), ...]
         volumeChart: [VolumeBar(), ...]
         buffer: [[price, amount], ...]
+        CandleBar: [open, high, low, close]
     '''
 
     def __init__(self):
