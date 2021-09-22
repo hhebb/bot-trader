@@ -1,5 +1,5 @@
 import pymongo
-
+import pandas as pd
 
 class DBManager:
     '''
@@ -16,13 +16,10 @@ class DBManager:
         self.pair = None
         self.timestamp = None
         self.__Connect(ip, port)
+        self.__rows = None
 
     def __Connect(self, ip='localhost', port=27017, db='test', collection='tmp'):
         self.__conn = pymongo.MongoClient(ip, port)
-
-        #
-        # if db == 'data':
-        #     self.pair, self.timestamp = self.__collection.name.split('_')
 
     def GetCurrentDB(self) -> pymongo.database.Database:
         return self.__db
@@ -44,14 +41,20 @@ class DBManager:
         db = self.__conn.get_database(dbName)
         return db.list_collection_names()
 
-    def GetRow(self, timestamp) -> dict:
+    def GetPopRow(self) -> dict:
+        '''
+            성능 향상을 위해 list pop.
+        '''
         # find 는 cursor 반환. cursor 는 generator 혹은 iterator.
         # find_one 은 dict 반환
-        query = {'timestamp': {'$eq': timestamp}}
-        result = self.__collection.find_one(query)
+
+        try:
+            result = self.__rows.pop(0)
+        except:
+            print('> No datas. Call "QueryAllRows" first.')
         return result
 
-    def GetAllRows(self) -> pymongo.cursor.Cursor:
+    def QueryAllRows(self):
         # current collection 의 모든 rows 를 cursor 객체로 가져옴.
-        result = self.__collection.find()
-        return result
+        result = list(self.__collection.find())
+        self.__rows = result

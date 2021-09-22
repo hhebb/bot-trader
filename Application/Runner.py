@@ -23,9 +23,10 @@ class RunnerWorker(QObject):
         super().__init__()
         self.__market = Market()
         self.__agent = Agent(10000)
-        self.__timestamp = datetime.datetime.strptime('2021-09-09 11:48:43', '%Y-%m-%d %H:%M:%S') # 2021-09-09 11:48:43
+        self.__timestamp = datetime.datetime.strptime('2021-09-22 00:36:11', '%Y-%m-%d %H:%M:%S') # 2021-09-09 11:48:43
         self.__market.dbManager.SetCurrentDB(dbName='data')
         self.__market.dbManager.SetCurrentCollection(collectionName=str(self.__timestamp))
+        self.__market.dbManager.QueryAllRows()
         self.__agent.transactionSignal.connect(self.transactionSignal.emit)
         # collection 들 표시하고 선택한 후에 DB 연결을 수행하도록 변경하기.
         # self.__pair = self.__market.dbManager.pair
@@ -45,7 +46,7 @@ class RunnerWorker(QObject):
         # initial timestamp 지정해야 함.
 
         while True:
-            time.sleep(.8 * 1 / self.__simulateSpeed) #.2
+            time.sleep(.4 * 1 / self.__simulateSpeed) #.2
             while self.__simulateState == SimulateState.STOP:
                 time.sleep(.001)
                 pass
@@ -83,13 +84,14 @@ class RunnerWorker(QObject):
         self.__agent.AutoBuy(pair='xrp', price=askPrice, amount=1)
         self.__agent.AutoSell(pair='xrp', price=bidPrice, amount=2)
 
-        marketPrice = trans.GetHistory()[-1].price
+        # print(trans.GetHistory())
+        # marketPrice = trans.GetHistory()[-1].price
         # print(self.__agent.GetEvaluation({'xrp': marketPrice}))
-        evaluation = self.__agent.GetEvaluation({'xrp': marketPrice})
-        ledger = self.__agent.GetLedger()
-        orders = self.__agent.GetOrders()
-        history = self.__agent.GetHistory()
-        self.agentStepSignal.emit(self.__agent.GetInitAsset(), evaluation, ledger, orders, history)
+        # evaluation = self.__agent.GetEvaluation({'xrp': marketPrice})
+        # ledger = self.__agent.GetLedger()
+        # orders = self.__agent.GetOrders()
+        # history = self.__agent.GetHistory()
+        # self.agentStepSignal.emit(self.__agent.GetInitAsset(), evaluation, ledger, orders, history)
 
     def GetSimulateState(self):
         return self.__simulateState

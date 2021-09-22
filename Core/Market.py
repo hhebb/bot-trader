@@ -1,5 +1,5 @@
 import datetime
-
+import pandas as pd
 import namespace
 from Core.OrderBook import OrderBook
 from Core.Transaction import Transaction
@@ -17,6 +17,7 @@ class Market:
         self.__transaction = Transaction()
         self.__ticker = Ticker()
         self.__parser = Parser()
+        self.__dataIndex = 0
 
     def SetSnapShots(self):
         # for fill initial data. for adjust
@@ -25,7 +26,7 @@ class Market:
 
     def Step(self, timestamp: datetime.datetime):
         '''
-            Get Data from Database
+            Get Data from loaded data.
             Parse data for use
             save lob, transaction, ticker datas.
             Ready to send these datas.
@@ -33,7 +34,7 @@ class Market:
             snapshot 있으면 주고 없으면 걍 넘어감.
             snapshot 있으면 통째로 갈아치우고 아니면 추가하여 갱신함.
         '''
-        data = self.dbManager.GetRow(timestamp)
+        data = self.dbManager.GetPopRow()
         bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot = \
             self.__parser.Parse(data)
 
@@ -62,6 +63,7 @@ class Market:
         # candle chart 를 위한 체결 데이터 수신.
         self.__ticker.Update(timestamp, self.GetTransaction().GetHistoryDiff())
 
+        self.__dataIndex += 1
         # print('> step\n')
 
     def GetASK(self):

@@ -6,6 +6,7 @@ class Ticker:
         volumeChart: [VolumeBar(), ...]
         buffer: [[price, amount], ...]
         CandleBar: [open, high, low, close]
+        VolumeBar: timestamp, amount
     '''
 
     def __init__(self):
@@ -15,7 +16,7 @@ class Ticker:
         self.__ma20 = list()
         self.__ma60 = list()
         self.__buffer = list()
-        self.__candleGap = 10
+        self.__candleGap = 60
         self.__timeBucket = 0
 
         self.__stamp = None
@@ -42,7 +43,7 @@ class Ticker:
                              min(self.__buffer, key=lambda x: x[0])[0], \
                              self.__buffer[-1][0]
                 totalVolume = self.CalcTotalVolume()
-
+                print(o, h, l, c)
                 candle = CandleBar(self.__stamp, [o, h, l, c])
                 volume = VolumeBar(self.__stamp, totalVolume)
             self.__tickChart.append(candle)
@@ -54,10 +55,10 @@ class Ticker:
             self.__stamp = None
         self.__timeBucket += 1
 
-    def GetTickChart(self):
+    def GetTickChart(self) -> list:
         return self.__tickChart
 
-    def GetVolumeChart(self):
+    def GetVolumeChart(self) -> list:
         return self.__volumeChart
 
     def GetMA5(self):

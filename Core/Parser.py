@@ -1,4 +1,5 @@
 from  Core.DBManager import DBManager
+import pandas as pd
 
 class Parser:
     '''
