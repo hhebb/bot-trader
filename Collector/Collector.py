@@ -2,50 +2,8 @@ import asyncio
 import websockets
 import json
 import datetime
-import pymongo
 import requests
-
-class DBManager:
-    def __init__(self):
-        self.conn: pymongo.MongoClient = None
-        self.db = None
-        self.collection = None
-
-    def Connect(self, db='test', coll='tmp'):
-        self.conn = pymongo.MongoClient('localhost', 27017)
-        self.db = self.conn.get_database(db)
-        self.collection = self.db.get_collection(coll)
-
-    def GetRow(self, timestamp):
-        # find 는 cursor 반환. cursor 는 generator 혹은 iterator.
-        # find_one 은 dict 반환
-        query = {'timestamp' : {'$eq':timestamp}}
-        result = self.collection.find_one(query)
-        # for res in result:
-        #     print(res, type(res))
-        return result
-
-    def WriteLOB(self, stamp, lob):
-        self.collection.update_one({'timestamp': stamp}, {'$set': {'lob': lob}}, upsert=True)
-
-    def PushLOB(self, stamp, lob):
-        self.collection.update_one({'timestamp': stamp}, {'$push': {'lob': lob}}, upsert=True)
-
-    def WriteTransaction(self, stamp, transaction):
-        self.collection.update_one({'timestamp': stamp}, {'$set': {'transaction': transaction}}, upsert=True)
-
-    def PushTransaction(self, stamp, transaction):
-        self.collection.update_one({'timestamp': stamp}, {'$push': {'transaction': transaction}}, upsert=True)
-
-    def WriteLOBSnapshot(self, stamp, snapshot):
-        self.collection.update_one({'timestamp': stamp}, {'$set': {'snapshot_lob': snapshot}}, upsert=True)
-
-    def WriteTransactionSnapshot(self, stamp, snapshot):
-        self.collection.update_one({'timestamp': stamp}, {'$set': {'snapshot_transaction': snapshot}}, upsert=True)
-
-    def Clear(self):
-        self.collection.drop()
-
+from Core.DBManager import DBManager
 
 async def LOBSaver(manager):
     uri = "wss://pubwss.bithumb.com/pub/ws"
@@ -80,7 +38,7 @@ async def LOBSaver(manager):
             orderData = data['content']['list']
 
             # row = {'timestamp' : stamp, 'lob' : orderData}
-            result = manager.GetRow(stamp)
+            result = manager.QueryRow(stamp)
 
             if result is not None:
                 # document 가 이미 있으며 lob 가 이미 있을 땐 확장 후 update.
@@ -148,7 +106,7 @@ async def TransactionSaver(manager):
                 # manager.Write(row)
 
             for stamp, trans in separated.items():
-                result = manager.GetRow(stamp)
+                result = manager.QueryRow(stamp)
                 if result is not None:
                     if 'transaction' in result.keys():
                         # print('> trans, document exist, trans exist')
@@ -188,7 +146,10 @@ async def main():
     manager = DBManager()
     now = str(datetime.datetime.now().replace(microsecond=0))
     print(now)
-    manager.Connect('data', now)
+    # manager.Connect('data', now)
+    manager.SetCurrentDB('data')
+    manager.SetCurrentCollection(now)
+
 
     # task 로 만들어서 event loop 에 한 번에 등록해도 됨.
     savers = [TransactionSaver(manager), LOBSaver(manager)]

@@ -8,6 +8,10 @@ from Core.DBManager import DBManager
 from Core.Parser import Parser
 
 class Market:
+    '''
+        Market simulator.
+
+    '''
     def __init__(self):
         self.dbManager = DBManager()
         self.__pairSymbol = 0

@@ -9,7 +9,7 @@ class Parser:
         # self.__manager = DBManager()
         pass
 
-    def Parse(self, data):
+    def Parse(self, data: dict):
         lob, transaction, lobSnapshot, transactionSnapshot = self.Split(data)
 
         bid = list()
@@ -30,7 +30,7 @@ class Parser:
         return bid, ask, transaction, bidSnapshot, askSnapshot, transactionSnapshot
 
 
-    def Split(self, data):
+    def Split(self, data: dict):
         lob = list()
         transaction = list()
         lobSnapshot = None

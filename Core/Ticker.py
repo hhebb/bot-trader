@@ -2,19 +2,19 @@ from datetime import datetime
 
 class Ticker:
     '''
-        tickChart: [CandleBar(), ...]
-        volumeChart: [VolumeBar(), ...]
+        tickSeries: [CandleBar(), ...]
+        volumeSeries: [VolumeBar(), ...]
         buffer: [[price, amount], ...]
         CandleBar: [open, high, low, close]
         VolumeBar: timestamp, amount
     '''
 
     def __init__(self):
-        self.__tickChart = list()
-        self.__volumeChart = list()
-        self.__ma5 = list()
-        self.__ma20 = list()
-        self.__ma60 = list()
+        self.__tickSeries = list()
+        self.__volumeSeries = list()
+        self.__ma5Series = list()
+        self.__ma20Series = list()
+        self.__ma60Series = list()
         self.__buffer = list()
         self.__candleGap = 60
         self.__timeBucket = 0
@@ -46,8 +46,8 @@ class Ticker:
                 print(o, h, l, c)
                 candle = CandleBar(self.__stamp, [o, h, l, c])
                 volume = VolumeBar(self.__stamp, totalVolume)
-            self.__tickChart.append(candle)
-            self.__volumeChart.append(volume)
+            self.__tickSeries.append(candle)
+            self.__volumeSeries.append(volume)
 
             self.__buffer.clear()
             self.__timeBucket = 0
@@ -55,11 +55,11 @@ class Ticker:
             self.__stamp = None
         self.__timeBucket += 1
 
-    def GetTickChart(self) -> list:
-        return self.__tickChart
+    def GetTickSeries(self) -> list:
+        return self.__tickSeries
 
-    def GetVolumeChart(self) -> list:
-        return self.__volumeChart
+    def GetVolumeSeries(self) -> list:
+        return self.__volumeSeries
 
     def GetMA5(self):
         return self.__ma5

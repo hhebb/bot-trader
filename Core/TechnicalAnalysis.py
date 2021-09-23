@@ -3,7 +3,7 @@ from Core.Ticker import *
 class TechnicalAnalyzer:
     '''
         기술적 분석 모듈.
-        chart 모듈, Analyzer 모듈이 사용함.
+        Analyzer 모듈이 사용함.
 
         -------------------------------
 

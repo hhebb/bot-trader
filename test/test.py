@@ -71,8 +71,4 @@ setStyleSheet(QString::fromUtf8("QScrollBar:vertical {"
 #         }'''
 # )
 
-dbm = DBManager()
-dbm.SetCurrentDB(dbName='data')
-dbm.SetCurrentCollection(collectionName='2021-09-22 00:36:11')
-rows = list(dbm.QueryAllRows())
-print(rows[0]['timestamp'])
+# multiple chart ex

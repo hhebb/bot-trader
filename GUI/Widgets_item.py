@@ -3,7 +3,7 @@ from PyQt5 import QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
-    QCandlestickSet, QChartView, QDateTimeAxis
+    QCandlestickSet, QChartView, QDateTimeAxis, QBarSeries, QBarSet
 from datetime import datetime
 import namespace
 from Application.Runner import RunnerWorker
@@ -650,10 +650,14 @@ class CandleChartContainer(QFrame):
         self.__candleSeries.setIncreasingColor(Qt.red)
         self.__candleSeries.setDecreasingColor(Qt.blue)
 
+        # volume series
+        self.__volumeSeries = QBarSeries()
+
         # chart
         self.__chart = QChart()
         self.__chart.setTitle('XRP')
         self.__chart.addSeries(self.__candleSeries)
+        # self.__chart.addSeries(self.__volumeSeries)
         self.__chart.createDefaultAxes()
         self.__chart.legend().hide()
 
@@ -687,17 +691,22 @@ class CandleChartContainer(QFrame):
         # self.__chart.setBackgroundPen(QColor(255, 0, 0))
         self.__chart.setBackgroundBrush(QColor(30, 30, 30))
 
-    def Draw(self, tickChart: list, volumeChart: list):
+    def Draw(self, tickSeries: list, volumeSeries: list):
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
-        if self.__candleSeries.count() == len(tickChart):
+        if self.__candleSeries.count() == len(tickSeries):
             return
 
         # clear all previous candles.
         self.__candleSeries.clear()
+        # self.__volumeSeries.clear()
 
         # re-draw all candles.
-        for candle in tickChart:
+        for candle in tickSeries:
             self.AppendCandle(candle)
+
+        # # re-draw all candles.
+        # for vol in volumeChart:
+        #     self.AppendCandle(vol)
 
         # axis
         # axis_x = QDateTimeAxis()
@@ -724,6 +733,18 @@ class CandleChartContainer(QFrame):
         candle = QCandlestickSet(o, h, l, c, t)
 
         self.__candleSeries.append(candle)
+
+    def AppendVolume(self, volumeData):
+        vol = volumeData.GetAmount()
+        ts = volumeData.GetStamp()
+        format = "%Y-%m-%d %H:%M:%S"
+        t = datetime.fromtimestamp(ts)
+        t = t.strftime(format)
+        t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        t = t.toMSecsSinceEpoch()
+        volumeSet = QBarSet(vol)
+
+        self.__volumeSeries.append(volumeSet)
 
 
 class OrderListContainer(QFrame):
@@ -1610,10 +1631,10 @@ class Window(QFrame):
         self.__transaction.Update(trans.GetHistory())
 
         # tick recv
-        tickChart = ticker.GetTickChart()
-        volumeChart = ticker.GetVolumeChart()
+        tickSeries = ticker.GetTickSeries()
+        volumeSeries = ticker.GetVolumeSeries()
         # self.tickerPanel.Draw(tickChart, volumeChart)
-        self.__chart.Draw(tickChart, volumeChart)
+        self.__chart.Draw(tickSeries, volumeSeries)
 
     def RecvAgentTransactData(self, orders: dict, ledger: dict, history: list):
         '''
