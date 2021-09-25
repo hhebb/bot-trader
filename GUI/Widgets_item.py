@@ -5,9 +5,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
     QCandlestickSet, QChartView, QDateTimeAxis, QBarSeries, QBarSet
 from datetime import datetime
+
+import Core.Ticker
 import namespace
 from Application.Runner import RunnerWorker
-from Core import Agent
+from Core import Agent, Ticker
 
 '''
     [GUI 분류 체계]
@@ -631,13 +633,13 @@ class TransactionItem(QFrame):
         self.clicked.emit()
         
         
-class CandleChartContainer(QFrame):
+class GeneralChartContainer(QFrame):
     '''
         hover 이벤트 등 추가.
         MA, MACD 등 보조지표 추가.
     '''
     def __init__(self):
-        super(CandleChartContainer, self).__init__()
+        super(GeneralChartContainer, self).__init__()
         self.InitUI()
         self.SetStyle()
 
@@ -691,7 +693,11 @@ class CandleChartContainer(QFrame):
         # self.__chart.setBackgroundPen(QColor(255, 0, 0))
         self.__chart.setBackgroundBrush(QColor(30, 30, 30))
 
-    def Draw(self, tickSeries: list, volumeSeries: list):
+    def Draw(self, ticker: Core.Ticker.Ticker):
+        tickSeries = ticker.GetTickSeries()
+        volumeSeries = ticker.GetVolumeSeries()
+        ma5Series = ticker.GetMA5Series()
+
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
         if self.__candleSeries.count() == len(tickSeries):
             return
@@ -748,9 +754,12 @@ class CandleChartContainer(QFrame):
 
 
 class OrderListContainer(QFrame):
-    def __init__(self, manualOrderWorker: Agent.ManualOrderWorker):
+    '''
+        manual cancel 기능을 연결하기 위해 manualOrder 모듈을 참조함.
+    '''
+    def __init__(self, manualOrder: Core.Agent.ManualOrder):
         super(OrderListContainer, self).__init__()
-        self.__manualOrderWorker = manualOrderWorker
+        self.__manualOrderObject = manualOrder
         self.InitUI()
         self.SetStyle()
 
@@ -867,8 +876,8 @@ class OrderListContainer(QFrame):
             amount = order['amount']
             self.AddRow(self, orderId, pair, position, price, amount)
 
-    def GetWorker(self):
-        return self.__manualOrderWorker
+    def GetManualOrderObject(self):
+        return self.__manualOrderObject
 
 
 class OrderItem(QFrame):
@@ -947,7 +956,7 @@ class OrderItem(QFrame):
 
     def CancelOrderRequestHandler(self):
         # print(self.__orderId)
-        self.__parentContainer.GetWorker().ManualCancel(self.__orderId)
+        self.__parentContainer.GetManualOrderObject().ManualCancel(self.__orderId)
 
 
 class LedgerListContainer(QFrame):
@@ -1299,9 +1308,9 @@ class ManualOrderContainer(QFrame):
     '''
         수동 주문 창.
     '''
-    def __init__(self, manualOrderWorker: Agent.ManualOrderWorker):
+    def __init__(self, manualOrderObject: Agent.ManualOrder):
         super(ManualOrderContainer, self).__init__()
-        self.__manualOrderWorker = manualOrderWorker
+        self.__manualOrderObject = manualOrderObject
         self.InitUI()
         self.SetStyle()
         self.SignalConnect()
@@ -1400,8 +1409,8 @@ class ManualOrderContainer(QFrame):
         self.__sellButton.clicked.connect(self.SellRequestHandler)
         self.__buyButton.clicked.connect(self.BuyRequestHandler)
 
-        self.sellRequest.connect(self.__manualOrderWorker.ManualSell)
-        self.buyRequest.connect(self.__manualOrderWorker.ManualBuy)
+        self.sellRequest.connect(self.__manualOrderObject.ManualSell)
+        self.buyRequest.connect(self.__manualOrderObject.ManualBuy)
 
     def SellRequestHandler(self):
         self.__manualOrderWorker.ManualSell('xrp', 1000, 1)
@@ -1410,7 +1419,7 @@ class ManualOrderContainer(QFrame):
 
     def BuyRequestHandler(self):
         # self.buyRequest.emit('xrp', 1000, 1)
-        self.__manualOrderWorker.ManualBuy('xrp', 1000, 1)
+        self.__manualOrderObject.ManualBuy('xrp', 1000, 1)
         # self.buyRequest.emit(self.__pairText.text(), float(self.__priceText.text()),
         #                       float(self.__amountText.text()))
 
@@ -1473,7 +1482,7 @@ class UserStatusContainer(QFrame):
         self.__evalText.setText('10000')
         self.__countText.setText('')
 
-    def Update(self, initAsset, totalAsset, ledger, orders, history):
+    def Update(self, initAsset, totalAsset):
         self.__evalText.setText(str(totalAsset))
 
 
@@ -1482,43 +1491,34 @@ class Window(QFrame):
     '''
         * object
             * runnerWorker: simulator thread worker
-            * manualOrderWorker: 수동 주문 처리 thread worker
+            * manualOrderObject: 수동 주문 처리 object
         * slot
-            * RecvMarketData: simulator step 을 통해 market data 수신.
-            * RecvAgentData: 수동 주문, 자동 주문, 주문 체결 을 통해 agent data 수신.
-            * RecvAgentInfo: agent 의 자산 상태 등 data 를 수신.
+            * 다 삭제함.
 
-        * manual order 를 worker 로 보낼 땐 함수 직접 호출, worker 에서 데이터 받을 땐 signal.
-        * automatic order signal 은 worker 에서 step signal 과 통합함.
+        # * manual order 를 worker 로 보낼 땐 함수 직접 호출, worker 에서 데이터 받을 땐 signal.
+        # * automatic order signal 은 worker 에서 step signal 과 통합함.
     '''
-    # stepRequest = pyqtSignal()
 
     def __init__(self):
         super(Window, self).__init__()
         # right method using QThread??
         self.__runnerThread = QThread()
-        self.__manualOrderThread = QThread()
+        # self.__manualOrderThread = QThread()
 
         self.__runnerWorker = RunnerWorker()
-        self.__manualOrderWorker = Agent.ManualOrderWorker(
+        self.__manualOrderObject = Agent.ManualOrder(
             agent=self.__runnerWorker.GetAgent())
 
         self.__runnerWorker.moveToThread(self.__runnerThread)
-        self.__manualOrderWorker.moveToThread(self.__manualOrderThread)
 
         self.__runnerThread.started.connect(self.__runnerWorker.Simulate)
-        self.__runnerWorker.stepped.connect(self.RecvMarketData)
-        self.__runnerWorker.agentStepSignal.connect(self.RecvAgentInfo) # ??
-        self.__runnerWorker.transactionSignal.connect(self.RecvAgentTransactData)
-        # 시스템에 의해 만들어지는 자동 주문 처리.ㄱ
-        # self.__runnerWorker.automaticOrderSignal.connect(self.RecvAgentData)
+        self.__runnerWorker.stepped.connect(self.SimulateStepHandler)
+        self.__runnerWorker.transactionSignal.connect(self.UserTransactionHandler)
 
-        self.__manualOrderThread.started.connect(self.__manualOrderWorker.run)
-        self.__manualOrderWorker.manualOrderSignal.connect(self.RecvAgentData)
+        self.__manualOrderObject.manualOrderSignal.connect(self.ManualOrderHandler)
 
         # self.stepRequest.connect(self.__runnerWorker.SetReady)
         #
-
 
         # self.__runnerThread = RunnerThread()
         # self.__manualOrderThread = Agent.ManualOrderThread(
@@ -1546,7 +1546,7 @@ class Window(QFrame):
         self.__sidebarLayout.addWidget(self.__userAnalysisContainer)
 
         self.__marketLayout = QVBoxLayout()
-        self.__chart = CandleChartContainer()
+        self.__chart = GeneralChartContainer()
         self.__lob = LOBContainer()
         self.__transaction = TransactionContainer()
 
@@ -1558,10 +1558,10 @@ class Window(QFrame):
         self.__marketLayout.addLayout(self.__marketDataLayout)
 
         self.__userLayout = QGridLayout()
-        self.__manualOrder = ManualOrderContainer(self.__manualOrderWorker)
+        self.__manualOrder = ManualOrderContainer(self.__manualOrderObject)
 
         self.__userBalanceLayout = QHBoxLayout()
-        self.__order = OrderListContainer(self.__manualOrderWorker)
+        self.__order = OrderListContainer(self.__manualOrderObject)
         self.__ledger = LedgerListContainer()
         self.__history = HistoryListContainer()
         self.__userBalanceLayout.addWidget(self.__order)
@@ -1574,7 +1574,6 @@ class Window(QFrame):
         self.__userLayout.addLayout(self.__userBalanceLayout, 1, 0, 1, 2)
         self.__userLayout.setRowStretch(0, 1)
         self.__userLayout.setRowStretch(1, 2)
-
 
         self.__mainLayout.addLayout(self.__sidebarLayout, 0, 2)
         self.__mainLayout.addLayout(self.__marketLayout, 0, 0)
@@ -1617,45 +1616,55 @@ class Window(QFrame):
     #                        # 'padding: 5px'
     #                        )
 
-    # slot. step by synchronized signal.
-    def RecvMarketData(self, ask, bid, trans, ticker):
+    def SimulateStepHandler(self):
         '''
             Market data Recv.
         '''
+
+        market = self.__runnerWorker.GetMarket()
+
         # lob recv
-        # self.orderPanel.orderbookWidget.Draw(ask.GetLOB(), bid.GetLOB())
-        self.__lob.Update(ask.GetLOB(), bid.GetLOB())
+        self.__lob.Update(market.GetASK().GetLOB(), market.GetBID().GetLOB())
 
         # transaction recv
-        # self.orderPanel.transactionWidget.Draw(trans.GetHistory())
-        self.__transaction.Update(trans.GetHistory())
+        self.__transaction.Update(market.GetTransaction().GetHistory())
 
         # tick recv
-        tickSeries = ticker.GetTickSeries()
-        volumeSeries = ticker.GetVolumeSeries()
-        # self.tickerPanel.Draw(tickChart, volumeChart)
-        self.__chart.Draw(tickSeries, volumeSeries)
+        self.__chart.Draw(market.GetTicker())
 
-    def RecvAgentTransactData(self, orders: dict, ledger: dict, history: list):
+    def UserTransactionHandler(self):
         '''
-            Agent data Recv.
+            Agent.
         '''
-        self.__order.Update(orders)
-        self.__ledger.Update(ledger)
-        self.__history.Update(history)
+        agent = self.__runnerWorker.GetAgent()
+        self.__order.Update(agent.GetOrders())
+        self.__ledger.Update(agent.GetLedger())
+        self.__history.Update(agent.GetHistory())
 
-    def RecvAgentData(self, orders: dict, ledger: dict):
+        ########################################
+        # temporary agent status desc.
+        currency = 'xrp'
+        try:
+            price = self.__runnerWorker.GetMarket().GetTransaction().GetHistory()[0].price
+            info = {currency: price}
+            self.__userStatus.Update(agent.GetInitAsset(), agent.GetEvaluation(info))
+        except:
+            pass
+
+    def ManualOrderHandler(self):
         '''
-            Agent data Recv.
+            update user wallet.
+            update user status.
         '''
-        self.__order.Update(orders)
-        self.__ledger.Update(ledger)
+        agent = self.__runnerWorker.GetAgent()
+        self.__order.Update(agent.GetOrders())
+        self.__ledger.Update(agent.GetLedger())
+
 
     def RecvAgentInfo(self, initAsset, totalAsset, ledger, orders, history):
         '''
             Agent Status Recv.
         '''
-        self.__userStatus.Update(initAsset, totalAsset, ledger, orders, history)
         pass
 
     # control

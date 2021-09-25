@@ -4,7 +4,7 @@ from copy import copy
 from PyQt5.QtCore import *
 
 class Agent(QObject):
-    transactionSignal = pyqtSignal(object, object, object) # orders, ledger, history
+    transactionSignal = pyqtSignal()
 
     '''
         * data structure
@@ -13,7 +13,7 @@ class Agent(QObject):
             * history: [{pair: '', position: '', price: '', amount: ''}, ...]
         
         * signals
-            * transactionSignal: 거래가 체결되면 orders, ledger 업데이트
+            * transactionSignal: 이전 주문들을 체결시킴. agent GUI 업데이트 이벤트.
         
         필요한거 - *총자산평가, -승률, 순이익, 잔고(현금, 주식 별로)
     '''
@@ -123,7 +123,7 @@ class Agent(QObject):
         # closed order remove from orders
         for key in toRemove:
             del self.__orders[key]
-        self.transactionSignal.emit(self.__orders, self.__ledger, self.__history)
+        self.transactionSignal.emit()
 
     def GetEvaluation(self, currentPrices: dict):
         # 현재 자산가치 평가. ledger 에서 완전히 체결이 이루어진 상태 기준으로 asset 평가
@@ -170,15 +170,17 @@ class Agent(QObject):
         return self.__orders
 
 
-class ManualOrderWorker(QObject):
+class ManualOrder(QObject):
     '''
         * signal
             * manualOrderSignal: 수동 주문(buy, sell, cancel) 시 agent 잔고 데이터 전달.
+
+        * thread 로 돌아갈 이유가 없어서 worker 에서 일반 QObject 클래스로 전환함.
     '''
-    manualOrderSignal = pyqtSignal(object, object) # orders, ledger
+    manualOrderSignal = pyqtSignal()
 
     def __init__(self, agent):
-        super(ManualOrderWorker, self).__init__()
+        super(ManualOrder, self).__init__()
         self.__agent: Agent = agent
         self.__orders = None
         self.__ledger = None
@@ -191,26 +193,16 @@ class ManualOrderWorker(QObject):
     # manual 주문관련 이벤트는 시그널을 보내지 않고 직접 호출해야함.
     def ManualSell(self, pair, price, amount):
         self.__agent.Sell(pair, price, amount)
-        # self.manualOrderSignal.emit(self.__orders, self.__ledger)
-        self.run()
+        self.manualOrderSignal.emit()
 
     def ManualBuy(self, pair, price, amount):
         self.__agent.Buy(pair, price, amount)
-        # self.manualOrderSignal.emit(self.__orders, self.__ledger)
-        self.run()
+        self.manualOrderSignal.emit()
 
     def ManualCancel(self, orderId):
         # print('worker', orderId)
         self.__agent.Cancel(orderId=orderId)
-        print('manual cancel')
-        # self.manualOrderSignal.emit(self.__orders, self.__ledger)
-        self.run()
+        self.manualOrderSignal.emit()
 
     def GetAgent(self):
         return self.__agent
-
-    def run(self) -> None:
-        # print('manual order!')
-        orders = self.__agent.GetOrders()
-        ledger = self.__agent.GetLedger()
-        self.manualOrderSignal.emit(orders, ledger)

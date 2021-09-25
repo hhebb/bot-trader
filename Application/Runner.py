@@ -9,15 +9,13 @@ from namespace import *
 class RunnerWorker(QObject):
     '''
         * signal
-        * stepped: simulate step 이후 market ask, bid, transaction, ticker 전달.
-        * agentStepSignal: simulate step 이후 asset, eval, ledger, orders, history 전달.
-        * transactionSignal: 거래가 체결되면 GUI 갱신을 위해 user orders, ledger 를 전달.
+        * stepped: simulate step 알림. market GUI 들이 update 되도록 함.
+        * transactionSignal: user 체결 알림. user GUI 들이 update 되도록 함.
     '''
 
-    stepped = pyqtSignal(object, object, object, object)
+    stepped = pyqtSignal()
     # 알고리즘이 step 마다 행동을 취하고 emit.
-    agentStepSignal = pyqtSignal(object, object, object, object, object)
-    transactionSignal = pyqtSignal(object, object, object) # orders, ledger, history
+    transactionSignal = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -39,6 +37,7 @@ class RunnerWorker(QObject):
 
     def Simulate(self):
         '''
+            thread work.
             Simulate automatically.
             appropriate time delay for rendering sync.
         '''
@@ -61,37 +60,22 @@ class RunnerWorker(QObject):
             For manual step simulation.
         '''
         self.__market.Step(self.__timestamp)
-        # self.__agent.Execute()
-        ask = self.__market.GetASK()
-        bid = self.__market.GetBID()
-        trans = self.__market.GetTransaction()
-        ticker = self.__market.GetTicker()
-        # print('> trans: ', self.__market.GetTransaction().GetHistoryDiff())
         self.__timestamp += datetime.timedelta(seconds=1)
         self.step += 1
-        self.stepped.emit(ask, bid, trans, ticker)
-        # print('> step', self.step)
+        self.stepped.emit()
         # QThread.sleep(2)
         self.ready = False
 
         # 시장가 get
-        primeAskKey = list(ask.GetLOB().keys())[0]
-        askPrice = ask.GetLOB()[primeAskKey].price  # ->LimitOrder, order[amount], order[count]
-        primeBidKey = list(bid.GetLOB().keys())[-1]
-        bidPrice = bid.GetLOB()[primeBidKey].price  # ->LimitOrder, order[amount], order[count]
-        self.__agent.Transact(ask=ask, bid=bid)
+        primeAskKey = list(self.__market.GetASK().GetLOB().keys())[0]
+        askPrice = self.__market.GetASK().GetLOB()[primeAskKey].price  # ->LimitOrder, order[amount], order[count]
+        primeBidKey = list(self.__market.GetBID().GetLOB().keys())[-1]
+        bidPrice = self.__market.GetBID().GetLOB()[primeBidKey].price  # ->LimitOrder, order[amount], order[count]
+        self.__agent.Transact(ask=self.__market.GetASK(), bid=self.__market.GetBID())
 
+        # order test.
         self.__agent.AutoBuy(pair='xrp', price=askPrice, amount=1)
         self.__agent.AutoSell(pair='xrp', price=bidPrice, amount=2)
-
-        # print(trans.GetHistory())
-        # marketPrice = trans.GetHistory()[-1].price
-        # print(self.__agent.GetEvaluation({'xrp': marketPrice}))
-        # evaluation = self.__agent.GetEvaluation({'xrp': marketPrice})
-        # ledger = self.__agent.GetLedger()
-        # orders = self.__agent.GetOrders()
-        # history = self.__agent.GetHistory()
-        # self.agentStepSignal.emit(self.__agent.GetInitAsset(), evaluation, ledger, orders, history)
 
     def GetSimulateState(self):
         return self.__simulateState
