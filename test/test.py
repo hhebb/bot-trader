@@ -71,4 +71,43 @@ setStyleSheet(QString::fromUtf8("QScrollBar:vertical {"
 #         }'''
 # )
 
-# multiple chart ex
+
+class base:
+    def __init__(self):
+        self._parent = 10
+
+    def mine(self, *args):
+        print('base', args)
+
+
+class child(base):
+    def __init__(self):
+        super().__init__()
+        # self._parent = 0
+
+    def mine(self):
+        print(self._parent)
+        self._parent += 1
+
+    def test(self):
+        self.mine()
+        super().mine()
+
+class child2(base):
+    def __init__(self):
+        super().__init__()
+        # self._parent = 1
+
+    def mine(self, **kargs):
+        # time = kargs['time']
+        print(self._parent)
+        # print(time)
+
+    def test(self):
+        self.mine()
+        super().mine()
+
+c1 = child()
+c2 = child2()
+c1.mine()
+c2.mine()

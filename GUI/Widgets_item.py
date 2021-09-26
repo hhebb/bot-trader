@@ -640,6 +640,8 @@ class GeneralChartContainer(QFrame):
     '''
     def __init__(self):
         super(GeneralChartContainer, self).__init__()
+        self.__seriesCount = 0
+        self.__seriesMap = dict()
         self.InitUI()
         self.SetStyle()
 
@@ -651,15 +653,22 @@ class GeneralChartContainer(QFrame):
         self.__candleSeries = QCandlestickSeries()
         self.__candleSeries.setIncreasingColor(Qt.red)
         self.__candleSeries.setDecreasingColor(Qt.blue)
+        self.__seriesMap['candle'] = self.__candleSeries
 
         # volume series
         self.__volumeSeries = QBarSeries()
+        self.__seriesMap['volume'] = self.__volumeSeries
+
+        # ma serieses
+        self.__ma5Series = QLineSeries()
+        self.__seriesMap['ma5'] = self.__ma5Series
+
 
         # chart
         self.__chart = QChart()
         self.__chart.setTitle('XRP')
-        self.__chart.addSeries(self.__candleSeries)
-        # self.__chart.addSeries(self.__volumeSeries)
+        for k, series in self.__seriesMap.items():
+            self.__chart.addSeries(series)
         self.__chart.createDefaultAxes()
         self.__chart.legend().hide()
 
@@ -699,20 +708,28 @@ class GeneralChartContainer(QFrame):
         ma5Series = ticker.GetMA5Series()
 
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
-        if self.__candleSeries.count() == len(tickSeries):
+        #ticker.GetSeriesCount()
+        if self.__seriesCount == ticker.GetSeriesCount(): # len(tickSeries): #self.__seriesCount
             return
 
         # clear all previous candles.
         self.__candleSeries.clear()
-        # self.__volumeSeries.clear()
+        self.__volumeSeries.clear()
+        self.__ma5Series.clear()
 
         # re-draw all candles.
-        for candle in tickSeries:
+        # for count in range(ticker.GetSeriesCount()): # timestamp 로 순회하여 일괄 추가.
+        #     self.AppendCandle(tickSeries.)
+        for stamp, candle in tickSeries.items():
             self.AppendCandle(candle)
 
-        # # re-draw all candles.
-        # for vol in volumeChart:
-        #     self.AppendCandle(vol)
+        # re-draw all volumes.
+        for stamp, vol in volumeSeries.items():
+            self.AppendVolume(vol)
+
+        # re-draw all ma5.
+        for stamp, ma in ma5Series.items():
+            self.AppendMA(ma)
 
         # axis
         # axis_x = QDateTimeAxis()
@@ -721,12 +738,17 @@ class GeneralChartContainer(QFrame):
         # self.__chart.addAxis(axis_x, Qt.AlignBottom)
         # self.__candleSeries.attachAxis(axis_x)
 
-        self.__chart.removeSeries(self.__candleSeries)
-        self.__chart.addSeries(self.__candleSeries)
+        for k, series in self.__seriesMap.items():
+            self.__chart.removeSeries(series)
+            self.__chart.addSeries(series)
 
         self.__chart.createDefaultAxes()
         self.__chart.legend().hide()
 
+        self.__seriesCount += 1
+
+    #######################################
+    # append 통합하기
     def AppendCandle(self, candleData):
         o, h, l, c = candleData.GetOHLC()
         ts = candleData.GetStamp()
@@ -748,9 +770,22 @@ class GeneralChartContainer(QFrame):
         t = t.strftime(format)
         t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
         t = t.toMSecsSinceEpoch()
-        volumeSet = QBarSet(vol)
+        volumeSet = QBarSet('volume')
+        volumeSet.append(vol)
 
         self.__volumeSeries.append(volumeSet)
+
+    def AppendMA(self, maData):
+        price = maData.GetPrice()
+        ts = maData.GetStamp()
+        format = "%Y-%m-%d %H:%M:%S"
+        t = datetime.fromtimestamp(ts)
+        t = t.strftime(format)
+        t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        t = t.toMSecsSinceEpoch()
+        maSet = QPointF(t, price)
+
+        self.__ma5Series.append(maSet)
 
 
 class OrderListContainer(QFrame):
