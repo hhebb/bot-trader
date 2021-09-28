@@ -13,18 +13,20 @@ class Ticker:
     '''
 
     def __init__(self):
+        # comprehensive series
+        self.__totalSeries = dict()
+        self.__totalSeries['candle'] = CandleSeriesObject()
+        self.__totalSeries['volume'] = VolumeBar()
+        self.__totalSeries['ma5'] = MASeriesObject(size=5)
+        self.__totalSeries['ma20'] = MASeriesObject(size=20)
+        self.__totalSeries['ma60'] = MASeriesObject(size=60)
+
         # series
         self.__tickSeries = CandleSeriesObject()
         self.__volumeSeries = VolumeSeriesObject()
         self.__ma5Series = MASeriesObject(size=5)
         self.__ma20Series = MASeriesObject(size=20)
         self.__ma60Series = MASeriesObject(size=60)
-
-        # self.__tickSeries = list()
-        # self.__volumeSeries = list()
-        # self.__ma5Series = list()
-        # self.__ma20Series = list()
-        # self.__ma60Series = list()
 
         self.__buffer = list()
         self.__candleGap = 60
@@ -63,7 +65,7 @@ class Ticker:
                 self.__tickSeries.Feed(timestamp=self.__stamp, ohlc=[o, h, l, c])
                 self.__volumeSeries.Feed(timestamp=self.__stamp, volume=totalVolume)
                 self.__ma5Series.Feed(timestamp=self.__stamp, closePrice=c)
-                # self.__ma20Series.Feed(timestamp=self.__stamp, closePrice=c)
+                self.__ma20Series.Feed(timestamp=self.__stamp, closePrice=c)
                 # self.__ma60Series.Feed(timestamp=self.__stamp, closePrice=c)
 
                 ######################################################
@@ -86,6 +88,9 @@ class Ticker:
 
         self.__timeBucket += 1
 
+    def GetDatas(self) -> dict:
+        return 0
+
     def GetTickSeries(self) -> dict:
         # return self.__tickSeries
         return self.__tickSeries.GetSeries()
@@ -95,6 +100,9 @@ class Ticker:
 
     def GetMA5Series(self) -> dict:
         return self.__ma5Series.GetSeries()
+
+    def GetMA20Series(self) -> dict:
+        return self.__ma20Series.GetSeries()
 
     def CalcTotalVolume(self):
         vol = 0

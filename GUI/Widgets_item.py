@@ -657,27 +657,35 @@ class GeneralChartContainer(QFrame):
 
         # volume series
         self.__volumeSeries = QBarSeries()
-        self.__seriesMap['volume'] = self.__volumeSeries
+        # self.__seriesMap['volume'] = self.__volumeSeries
 
         # ma serieses
         self.__ma5Series = QLineSeries()
+        self.__ma20Series = QLineSeries()
         self.__seriesMap['ma5'] = self.__ma5Series
-
+        self.__seriesMap['ma20'] = self.__ma20Series
 
         # chart
         self.__chart = QChart()
+        self.__volumeChart = QChart()
         self.__chart.setTitle('XRP')
         for k, series in self.__seriesMap.items():
             self.__chart.addSeries(series)
-        self.__chart.createDefaultAxes()
+        self.__volumeChart.addSeries(self.__volumeSeries)
+        # self.__chart.createDefaultAxes()
+        self.__volumeChart.createDefaultAxes()
         self.__chart.legend().hide()
+        self.__volumeChart.legend().hide()
 
         # displaying chart
         self.__chartView = QChartView(self.__chart)
+        self.__volumeChartView = QChartView(self.__volumeChart)
         self.__chartView.setRenderHint(QPainter.Antialiasing)
+        self.__volumeChartView.setRenderHint(QPainter.Antialiasing)
 
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__chartView)
+        self.__layout.addWidget(self.__volumeChartView)
         self.setLayout(self.__layout)
 
     def SetStyle(self):
@@ -701,11 +709,14 @@ class GeneralChartContainer(QFrame):
         )
         # self.__chart.setBackgroundPen(QColor(255, 0, 0))
         self.__chart.setBackgroundBrush(QColor(30, 30, 30))
+        self.__volumeChart.setBackgroundBrush(QColor(30, 30, 30))
 
     def Draw(self, ticker: Core.Ticker.Ticker):
+        # Get Datas
         tickSeries = ticker.GetTickSeries()
         volumeSeries = ticker.GetVolumeSeries()
         ma5Series = ticker.GetMA5Series()
+        ma20Series = ticker.GetMA20Series()
 
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
         #ticker.GetSeriesCount()
@@ -716,34 +727,69 @@ class GeneralChartContainer(QFrame):
         self.__candleSeries.clear()
         self.__volumeSeries.clear()
         self.__ma5Series.clear()
+        self.__ma20Series.clear()
+        self.__tm = list()
+
+
+        ############################################
+        # redraw
+        for :
+            o, h, l, c = candleData.GetOHLC()
+            ts = candleData.GetStamp()
+            # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 분단위 이하로 차트 그릴 수 있음.
+            format = "%Y-%m-%d %H:%M:%S"
+            t = datetime.fromtimestamp(ts)
+            t = t.strftime(format)
+            t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+            t = t.toMSecsSinceEpoch()
+            candle = QCandlestickSet(o, h, l, c, t)
+
+            self.__candleSeries.append(candle)
+        ##############################################
+
 
         # re-draw all candles.
-        # for count in range(ticker.GetSeriesCount()): # timestamp 로 순회하여 일괄 추가.
-        #     self.AppendCandle(tickSeries.)
         for stamp, candle in tickSeries.items():
             self.AppendCandle(candle)
 
         # re-draw all volumes.
+        self.volSet = QBarSet('volume')
         for stamp, vol in volumeSeries.items():
+            self.__tm.append(str(stamp))
             self.AppendVolume(vol)
+        self.__volumeSeries.append(self.volSet)
 
         # re-draw all ma5.
         for stamp, ma in ma5Series.items():
             self.AppendMA(ma)
 
-        # axis
-        # axis_x = QDateTimeAxis()
-        # axis_x.setTickCount(10)
-        # axis_x.setFormat("mm:ss")
-        # self.__chart.addAxis(axis_x, Qt.AlignBottom)
-        # self.__candleSeries.attachAxis(axis_x)
+        # re-draw all ma20.
+        for stamp, ma in ma20Series.items():
+            self.AppendMA20(ma)
+
 
         for k, series in self.__seriesMap.items():
             self.__chart.removeSeries(series)
             self.__chart.addSeries(series)
+        self.__volumeChart.removeSeries(self.__volumeSeries)
+        self.__volumeChart.addSeries(self.__volumeSeries)
+
+        # axis
+        # axis_x = QDateTimeAxis()
+        # axis_x.setTickCount(10)
+        # axis_x.setFormat("mm:ss")
+        # self.__volumeChart.addAxis(axis_x, Qt.AlignBottom)
+        # self.__volumeSeries.attachAxis(axis_x)
+        self.__volumeChart.createDefaultAxes() # axis 가 있어야 설정할 수 있음.
+        self.__volumeChart.axisX(self.__volumeSeries).setCategories(self.__tm)
 
         self.__chart.createDefaultAxes()
+        # self.__volumeChart.createDefaultAxes()
+        self.__chart.axisX(self.__candleSeries).setVisible(False)
+        self.__chart.axisX(self.__ma5Series).setVisible(False)
+        self.__chart.axisX(self.__ma20Series).setVisible(False)
         self.__chart.legend().hide()
+        self.__volumeChart.legend().hide()
 
         self.__seriesCount += 1
 
@@ -770,10 +816,10 @@ class GeneralChartContainer(QFrame):
         t = t.strftime(format)
         t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
         t = t.toMSecsSinceEpoch()
-        volumeSet = QBarSet('volume')
-        volumeSet.append(vol)
+        # volumeSet = QBarSet('volume')
+        self.volSet.append(vol)
 
-        self.__volumeSeries.append(volumeSet)
+        # self.__volumeSeries.append(volumeSet)
 
     def AppendMA(self, maData):
         price = maData.GetPrice()
@@ -786,6 +832,18 @@ class GeneralChartContainer(QFrame):
         maSet = QPointF(t, price)
 
         self.__ma5Series.append(maSet)
+
+    def AppendMA20(self, maData):
+        price = maData.GetPrice()
+        ts = maData.GetStamp()
+        format = "%Y-%m-%d %H:%M:%S"
+        t = datetime.fromtimestamp(ts)
+        t = t.strftime(format)
+        t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        t = t.toMSecsSinceEpoch()
+        maSet = QPointF(t, price)
+
+        self.__ma20Series.append(maSet)
 
 
 class OrderListContainer(QFrame):
