@@ -3,6 +3,7 @@ import numpy as np
 
 class Ticker:
     '''
+        all Series are managed by dictionary like.
         tickSeries: [CandleBar(), ...]
         volumeSeries: [VolumeBar(), ...]
         buffer: [[price, amount], ...]
@@ -13,20 +14,21 @@ class Ticker:
     '''
 
     def __init__(self):
-        # comprehensive series
+        # comprehensive series. 왠만하면 데이터는 해쉬로 관리하는 것이 좋음.
         self.__totalSeries = dict()
         self.__totalSeries['candle'] = CandleSeriesObject()
-        self.__totalSeries['volume'] = VolumeBar()
+        self.__totalSeries['volume'] = VolumeSeriesObject()
         self.__totalSeries['ma5'] = MASeriesObject(size=5)
         self.__totalSeries['ma20'] = MASeriesObject(size=20)
         self.__totalSeries['ma60'] = MASeriesObject(size=60)
 
-        # series
+        # series ############################## to remove
         self.__tickSeries = CandleSeriesObject()
         self.__volumeSeries = VolumeSeriesObject()
         self.__ma5Series = MASeriesObject(size=5)
         self.__ma20Series = MASeriesObject(size=20)
         self.__ma60Series = MASeriesObject(size=60)
+        self.__bollingerBandSeries = BollingerBandSeriesObject(size=20)
 
         self.__buffer = list()
         self.__candleGap = 60
@@ -66,6 +68,7 @@ class Ticker:
                 self.__volumeSeries.Feed(timestamp=self.__stamp, volume=totalVolume)
                 self.__ma5Series.Feed(timestamp=self.__stamp, closePrice=c)
                 self.__ma20Series.Feed(timestamp=self.__stamp, closePrice=c)
+                self.__bollingerBandSeries.Feed(timestamp=self.__stamp, closePrice=c)
                 # self.__ma60Series.Feed(timestamp=self.__stamp, closePrice=c)
 
                 ######################################################
@@ -89,7 +92,7 @@ class Ticker:
         self.__timeBucket += 1
 
     def GetDatas(self) -> dict:
-        return 0
+        return self.__totalSeries
 
     def GetTickSeries(self) -> dict:
         # return self.__tickSeries
@@ -103,6 +106,9 @@ class Ticker:
 
     def GetMA20Series(self) -> dict:
         return self.__ma20Series.GetSeries()
+
+    def GetBollingerBandSeries(self) -> dict:
+        return self.__bollingerBandSeries.GetSeries()
 
     def CalcTotalVolume(self):
         vol = 0
@@ -126,6 +132,9 @@ class BaseSeriesObject:
         self._series = dict()
 
     def Feed(self):
+        '''
+            append data.
+        '''
         pass
 
     def GetStamp(self):
@@ -145,8 +154,8 @@ class CandleSeriesObject(BaseSeriesObject):
     def Feed(self, **kargs):
         timestamp = kargs['timestamp']
         ohlc = kargs['ohlc']
-        candle = CandleBar(timestamp=timestamp, ohlc=ohlc)
-        self._series[timestamp] = candle
+        # candle = CandleBar(timestamp=timestamp, ohlc=ohlc)
+        self._series[timestamp] = ohlc
 
 
 class VolumeSeriesObject(BaseSeriesObject):
@@ -156,8 +165,8 @@ class VolumeSeriesObject(BaseSeriesObject):
     def Feed(self, **kargs):
         timestamp = kargs['timestamp']
         vol = kargs['volume']
-        volume = VolumeBar(timestamp=timestamp, amount=vol)
-        self._series[timestamp] = volume
+        # volume = VolumeBar(timestamp=timestamp, amount=vol)
+        self._series[timestamp] = vol
 
 
 class MASeriesObject(BaseSeriesObject):
@@ -174,46 +183,106 @@ class MASeriesObject(BaseSeriesObject):
             self.__bucket.pop(0)
 
         mean = np.mean(self.__bucket)
-        mAverage = MA5Bar(timestamp=timestamp, c=mean)
-        self._series[timestamp] = mAverage
+        # mAverage = MA5Bar(timestamp=timestamp, c=mean)
+        self._series[timestamp] = mean
 
+
+class MACDSeriesObject(BaseSeriesObject):
+    def __init__(self, short=12, long=26, size=9):
+        super().__init__()
+        self.__priceBucketSize = long
+        self.__macdBucketSize = size
+        self.__priceBucket = list()
+        self.__macdBucket = list()
+
+    def Feed(self, **kargs):
+        timestamp = kargs['timestamp']
+        price = kargs['closePrice']
+        self.__priceBucket.append(price)
+        if len(self.__priceBucket) > self.__bucketSize:
+            self.__priceBucket.pop(0)
+
+        maShort = np.mean(self.__priceBucket[-12:])
+        maLong = np.mean(self.__priceBucket)
+        macd = maShort - maLong
+
+        self.__macdBucket.append(macd)
+        if len(self.__macdBucket) > self.__macdBucketSize:
+            self.__macdBucket.pop(0)
+
+        # signal = np.mean(self.__macdBucket)
+        # mAverage = MA5Bar(timestamp=timestamp, c=mean)
+        # self._series[timestamp] = mAverage
+
+
+class BollingerBandSeriesObject(BaseSeriesObject):
+    def __init__(self, size=20):
+        super().__init__()
+        self.__size = size
+        self.__bucket = list()
+
+    def Feed(self, **kargs):
+        timestamp = kargs['timestamp']
+        price = kargs['closePrice']
+        self.__bucket.append(price)
+        if len(self.__bucket) > self.__size:
+            self.__bucket.pop(0)
+
+        mean = np.mean(self.__bucket)
+        std = np.std(self.__bucket)
+        upper = mean + 2 * std
+        lower = mean - 2 * std
+
+        self._series[timestamp] = (upper, lower)
 
 
 ###################################################
 
 
 
-class CandleBar:
-    def __init__(self, timestamp: datetime.timestamp, ohlc: list):
-        self.__timestamp = timestamp
-        self.__open, self.__high, self.__low, self.__close = ohlc
-
-    def GetStamp(self):
-        return self.__timestamp
-
-    def GetOHLC(self):
-        return self.__open, self.__high, self.__low, self.__close
-
-
-class VolumeBar:
-    def __init__(self, timestamp: datetime.timestamp, amount: float):
-        self.__timestamp = timestamp
-        self.__amount = amount
-
-    def GetStamp(self):
-        return self.__timestamp
-
-    def GetAmount(self):
-        return self.__amount
-
-
-class MA5Bar:
-    def __init__(self, timestamp: datetime.timestamp, c: float):
-        self.__timestamp = timestamp
-        self.__price = c
-
-    def GetStamp(self):
-        return self.__timestamp
-
-    def GetPrice(self):
-        return self.__price
+# class CandleBar:
+#     def __init__(self, timestamp: datetime.timestamp, ohlc: list):
+#         self.__timestamp = timestamp
+#         self.__open, self.__high, self.__low, self.__close = ohlc
+#
+#     def GetStamp(self):
+#         return self.__timestamp
+#
+#     def GetOHLC(self):
+#         return self.__open, self.__high, self.__low, self.__close
+#
+#
+# class VolumeBar:
+#     def __init__(self, timestamp: datetime.timestamp, amount: float):
+#         self.__timestamp = timestamp
+#         self.__amount = amount
+#
+#     def GetStamp(self):
+#         return self.__timestamp
+#
+#     def GetAmount(self):
+#         return self.__amount
+#
+#
+# class MA5Bar:
+#     def __init__(self, timestamp: datetime.timestamp, c: float):
+#         self.__timestamp = timestamp
+#         self.__price = c
+#
+#     def GetStamp(self):
+#         return self.__timestamp
+#
+#     def GetPrice(self):
+#         return self.__price
+#
+#
+# class BollingerBandBar:
+#     def __init__(self, timestamp: datetime.timestamp, c: float):
+#         self.__timestamp = timestamp
+#         self.__price = c
+#
+#     def GetStamp(self):
+#         return self.__timestamp
+#
+#     def GetPrice(self):
+#         return self.__price

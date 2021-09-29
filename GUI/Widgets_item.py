@@ -3,7 +3,7 @@ from PyQt5 import QtGui
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtChart import QChart, QLineSeries, QCandlestickSeries, \
-    QCandlestickSet, QChartView, QDateTimeAxis, QBarSeries, QBarSet
+    QCandlestickSet, QChartView, QDateTimeAxis, QBarSeries, QBarSet, QAreaSeries
 from datetime import datetime
 
 import Core.Ticker
@@ -638,8 +638,9 @@ class GeneralChartContainer(QFrame):
         hover 이벤트 등 추가.
         MA, MACD 등 보조지표 추가.
     '''
-    def __init__(self):
+    def __init__(self, ticker: Core.Ticker.Ticker):
         super(GeneralChartContainer, self).__init__()
+        self.__ticker = ticker
         self.__seriesCount = 0
         self.__seriesMap = dict()
         self.InitUI()
@@ -648,6 +649,17 @@ class GeneralChartContainer(QFrame):
     def InitUI(self):
         self.__layout = QVBoxLayout()
         self.__title = QLabel('CANDLE CHART')
+
+        # bollinger band series
+        self.__bollingerBandSeries = QAreaSeries()
+        gradient = QLinearGradient(QPointF(0, 0), QPointF(0, 1))
+        gradient.setColorAt(0.0, QColor(0, 255, 0))
+        gradient.setColorAt(0.5, QColor(255, 255, 255))
+        gradient.setColorAt(1.0, QColor(0, 255, 0))
+        gradient.setCoordinateMode(QGradient.ObjectBoundingMode)
+        self.__bollingerBandSeries.setBrush(gradient)
+
+        self.__seriesMap['bollingerBand'] = self.__bollingerBandSeries
 
         # candle series
         self.__candleSeries = QCandlestickSeries()
@@ -659,11 +671,12 @@ class GeneralChartContainer(QFrame):
         self.__volumeSeries = QBarSeries()
         # self.__seriesMap['volume'] = self.__volumeSeries
 
-        # ma serieses
+        # ma seriese
         self.__ma5Series = QLineSeries()
         self.__ma20Series = QLineSeries()
         self.__seriesMap['ma5'] = self.__ma5Series
         self.__seriesMap['ma20'] = self.__ma20Series
+
 
         # chart
         self.__chart = QChart()
@@ -711,16 +724,21 @@ class GeneralChartContainer(QFrame):
         self.__chart.setBackgroundBrush(QColor(30, 30, 30))
         self.__volumeChart.setBackgroundBrush(QColor(30, 30, 30))
 
-    def Draw(self, ticker: Core.Ticker.Ticker):
+    def Draw(self):
+        '''
+            그릴 series name 만 받아서 그 때 그때 반영하기? ticker 자체는 멤버로 가지고 있기.
+        '''
+
         # Get Datas
-        tickSeries = ticker.GetTickSeries()
-        volumeSeries = ticker.GetVolumeSeries()
-        ma5Series = ticker.GetMA5Series()
-        ma20Series = ticker.GetMA20Series()
+        tickSeries = self.__ticker.GetTickSeries()
+        volumeSeries = self.__ticker.GetVolumeSeries()
+        ma5Series = self.__ticker.GetMA5Series()
+        ma20Series = self.__ticker.GetMA20Series()
+        bollingerBandSeries = self.__ticker.GetBollingerBandSeries()
 
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
         #ticker.GetSeriesCount()
-        if self.__seriesCount == ticker.GetSeriesCount(): # len(tickSeries): #self.__seriesCount
+        if self.__seriesCount == self.__ticker.GetSeriesCount(): # len(tickSeries): #self.__seriesCount
             return
 
         # clear all previous candles.
@@ -728,45 +746,53 @@ class GeneralChartContainer(QFrame):
         self.__volumeSeries.clear()
         self.__ma5Series.clear()
         self.__ma20Series.clear()
+        # self.__bollingerBandSeries.()
         self.__tm = list()
 
 
         ############################################
         # redraw
-        for :
-            o, h, l, c = candleData.GetOHLC()
-            ts = candleData.GetStamp()
-            # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 분단위 이하로 차트 그릴 수 있음.
-            format = "%Y-%m-%d %H:%M:%S"
-            t = datetime.fromtimestamp(ts)
-            t = t.strftime(format)
-            t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
-            t = t.toMSecsSinceEpoch()
-            candle = QCandlestickSet(o, h, l, c, t)
-
-            self.__candleSeries.append(candle)
+        # for :
+        #     o, h, l, c = candleData.GetOHLC()
+        #     ts = candleData.GetStamp()
+        #     # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 분단위 이하로 차트 그릴 수 있음.
+        #     format = "%Y-%m-%d %H:%M:%S"
+        #     t = datetime.fromtimestamp(ts)
+        #     t = t.strftime(format)
+        #     t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        #     t = t.toMSecsSinceEpoch()
+        #     candle = QCandlestickSet(o, h, l, c, t)
+        #
+        #     self.__candleSeries.append(candle)
         ##############################################
 
 
         # re-draw all candles.
         for stamp, candle in tickSeries.items():
-            self.AppendCandle(candle)
+            self.AppendCandle(stamp, candle)
 
         # re-draw all volumes.
         self.volSet = QBarSet('volume')
         for stamp, vol in volumeSeries.items():
             self.__tm.append(str(stamp))
-            self.AppendVolume(vol)
+            self.AppendVolume(stamp, vol)
         self.__volumeSeries.append(self.volSet)
 
         # re-draw all ma5.
         for stamp, ma in ma5Series.items():
-            self.AppendMA(ma)
+            self.AppendMA(stamp, ma)
 
         # re-draw all ma20.
         for stamp, ma in ma20Series.items():
-            self.AppendMA20(ma)
+            self.AppendMA20(stamp, ma)
 
+        # re-draw bollinger band
+        self.upperSeries = QLineSeries()
+        self.lowerSeries = QLineSeries()
+        for stamp, bb in bollingerBandSeries.items():
+            self.AppendBollingerBand(stamp, bb)
+        self.__bollingerBandSeries.setUpperSeries(self.upperSeries)
+        self.__bollingerBandSeries.setLowerSeries(self.lowerSeries)
 
         for k, series in self.__seriesMap.items():
             self.__chart.removeSeries(series)
@@ -788,6 +814,7 @@ class GeneralChartContainer(QFrame):
         self.__chart.axisX(self.__candleSeries).setVisible(False)
         self.__chart.axisX(self.__ma5Series).setVisible(False)
         self.__chart.axisX(self.__ma20Series).setVisible(False)
+        self.__chart.axisX(self.__bollingerBandSeries).setVisible(False)
         self.__chart.legend().hide()
         self.__volumeChart.legend().hide()
 
@@ -795,9 +822,10 @@ class GeneralChartContainer(QFrame):
 
     #######################################
     # append 통합하기
-    def AppendCandle(self, candleData):
-        o, h, l, c = candleData.GetOHLC()
-        ts = candleData.GetStamp()
+    def AppendCandle(self, stamp, candleData):
+        # o, h, l, c = candleData.GetOHLC()
+        o, h, l, c = candleData
+        ts = stamp
         # time manipulate. 반드시 Qt 초 시간 단위에 맞게 해야만 분단위 이하로 차트 그릴 수 있음.
         format = "%Y-%m-%d %H:%M:%S"
         t = datetime.fromtimestamp(ts)
@@ -808,9 +836,9 @@ class GeneralChartContainer(QFrame):
 
         self.__candleSeries.append(candle)
 
-    def AppendVolume(self, volumeData):
-        vol = volumeData.GetAmount()
-        ts = volumeData.GetStamp()
+    def AppendVolume(self, stamp, volumeData):
+        vol = volumeData
+        ts = stamp
         format = "%Y-%m-%d %H:%M:%S"
         t = datetime.fromtimestamp(ts)
         t = t.strftime(format)
@@ -821,9 +849,9 @@ class GeneralChartContainer(QFrame):
 
         # self.__volumeSeries.append(volumeSet)
 
-    def AppendMA(self, maData):
-        price = maData.GetPrice()
-        ts = maData.GetStamp()
+    def AppendMA(self, stamp, maData):
+        price = maData
+        ts = stamp
         format = "%Y-%m-%d %H:%M:%S"
         t = datetime.fromtimestamp(ts)
         t = t.strftime(format)
@@ -833,9 +861,9 @@ class GeneralChartContainer(QFrame):
 
         self.__ma5Series.append(maSet)
 
-    def AppendMA20(self, maData):
-        price = maData.GetPrice()
-        ts = maData.GetStamp()
+    def AppendMA20(self, stamp, maData):
+        price = maData
+        ts = stamp
         format = "%Y-%m-%d %H:%M:%S"
         t = datetime.fromtimestamp(ts)
         t = t.strftime(format)
@@ -844,6 +872,18 @@ class GeneralChartContainer(QFrame):
         maSet = QPointF(t, price)
 
         self.__ma20Series.append(maSet)
+
+    def AppendBollingerBand(self, stamp, bbData):
+        band = bbData
+        ts = stamp
+        format = "%Y-%m-%d %H:%M:%S"
+        t = datetime.fromtimestamp(ts)
+        t = t.strftime(format)
+        t = QDateTime.fromString(t, "yyyy-MM-dd hh:mm:ss")
+        t = t.toMSecsSinceEpoch()
+
+        self.upperSeries.append(t, band[0])
+        self.lowerSeries.append(t, band[1])
 
 
 class OrderListContainer(QFrame):
@@ -1639,7 +1679,7 @@ class Window(QFrame):
         self.__sidebarLayout.addWidget(self.__userAnalysisContainer)
 
         self.__marketLayout = QVBoxLayout()
-        self.__chart = GeneralChartContainer()
+        self.__chart = GeneralChartContainer(self.__runnerWorker.GetMarket().GetTicker())
         self.__lob = LOBContainer()
         self.__transaction = TransactionContainer()
 
@@ -1712,6 +1752,7 @@ class Window(QFrame):
     def SimulateStepHandler(self):
         '''
             Market data Recv.
+            lob, transaction 도 ticker 와 마찬가지로 멤버로 객체를 가지고 있도록 만들기!!
         '''
 
         market = self.__runnerWorker.GetMarket()
@@ -1723,7 +1764,7 @@ class Window(QFrame):
         self.__transaction.Update(market.GetTransaction().GetHistory())
 
         # tick recv
-        self.__chart.Draw(market.GetTicker())
+        self.__chart.Draw()
 
     def UserTransactionHandler(self):
         '''
