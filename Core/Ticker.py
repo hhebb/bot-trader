@@ -126,15 +126,23 @@ class Ticker:
 class BaseSeriesObject:
     '''
         series: {timestamp: data}
+
+        * series
+            * tick data series
+        * maxSize
+            * limit of max tick data
     '''
 
     def __init__(self):
         self._series = dict()
+        self._maxSize = 60
 
     def Feed(self):
         '''
             append data.
         '''
+        if len(self._series) > self._maxSize:
+            self._series.pop(list(self._series.keys())[0])
         pass
 
     def GetStamp(self):
@@ -152,6 +160,7 @@ class CandleSeriesObject(BaseSeriesObject):
         super().__init__()
 
     def Feed(self, **kargs):
+        super().Feed()
         timestamp = kargs['timestamp']
         ohlc = kargs['ohlc']
         # candle = CandleBar(timestamp=timestamp, ohlc=ohlc)
@@ -163,6 +172,7 @@ class VolumeSeriesObject(BaseSeriesObject):
         super().__init__()
 
     def Feed(self, **kargs):
+        super().Feed()
         timestamp = kargs['timestamp']
         vol = kargs['volume']
         # volume = VolumeBar(timestamp=timestamp, amount=vol)
@@ -176,6 +186,7 @@ class MASeriesObject(BaseSeriesObject):
         self.__bucket = list()
 
     def Feed(self, **kargs):
+        super().Feed()
         timestamp = kargs['timestamp']
         price = kargs['closePrice']
         self.__bucket.append(price)
@@ -196,6 +207,7 @@ class MACDSeriesObject(BaseSeriesObject):
         self.__macdBucket = list()
 
     def Feed(self, **kargs):
+        super().Feed()
         timestamp = kargs['timestamp']
         price = kargs['closePrice']
         self.__priceBucket.append(price)
@@ -222,6 +234,7 @@ class BollingerBandSeriesObject(BaseSeriesObject):
         self.__bucket = list()
 
     def Feed(self, **kargs):
+        super().Feed()
         timestamp = kargs['timestamp']
         price = kargs['closePrice']
         self.__bucket.append(price)
@@ -243,6 +256,7 @@ class RSISeriesObject(BaseSeriesObject):
         self.__bucket = list()
 
     def Feed(self, **kargs):
+        super().Feed()
         timestamp = kargs['timestamp']
         price = kargs['closePrice']
         self.__bucket.append(price)

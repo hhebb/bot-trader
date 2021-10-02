@@ -643,6 +643,7 @@ class GeneralChartContainer(QFrame):
         super(GeneralChartContainer, self).__init__()
         self.__ticker = ticker
         self.__seriesCount = 0
+        self.__maxSeriesCount = 3 # 10 ~ 20
         self.__seriesMap = dict()
         self.InitUI()
         self.SetStyle()
@@ -700,35 +701,77 @@ class GeneralChartContainer(QFrame):
         self.__layout.addWidget(self.__title)
         self.__layout.addWidget(self.__chartView)
         self.__layout.addWidget(self.__volumeChartView)
+
+        self.__layout.setStretch(0, 1)
+        self.__layout.setStretch(1, 5)
+        self.__layout.setStretch(2, 2)
+
         self.setLayout(self.__layout)
 
     def SetStyle(self):
-        r, g, b = namespace.ColorCode.DARK_PANEL.value
-        self.setStyleSheet(
-            f'''
-                background-color: rgb({str(r)}, {str(g)}, {str(b)});
-                border-radius: 10px;
-                margin: 5px;
-            '''
-        )
-        self.__title.setStyleSheet(
-            '''
-                border-style: none none solid none;
-                border-color: white;
-                border-width: 0px;
-                font-size: 20px;
-                border-radius: 0px;
-                margin: 20px 0px 20px 10px;
-            '''
-        )
-        # self.__chart.setBackgroundPen(QColor(255, 0, 0))
-        self.__chart.setBackgroundBrush(QColor(30, 30, 30))
-        self.__volumeChart.setBackgroundBrush(QColor(30, 30, 30))
+            r, g, b = namespace.ColorCode.DARK_PANEL.value
+            self.setStyleSheet(
+                f'''
+                    background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                    border-radius: 10px;
+                    margin: 5px;
+                '''
+            )
+            self.__title.setStyleSheet(
+                '''
+                    border-style: none none solid none;
+                    border-color: white;
+                    border-width: 0px;
+                    font-size: 20px;
+                    border-radius: 0px;
+                    margin: 20px 0px 20px 10px;
+                '''
+            )
+            # self.__chart.setBackgroundPen(QColor(255, 0, 0))
+
+            self.__chartView.setStyleSheet(
+                '''
+                    # border-style: solid;
+                    # border-color: white;
+                    # border-width: 2px;
+                    # border-radius: 0px;
+                    margin: 0px;
+                    padding: 0px;
+                   
+                '''
+            )
+            self.__volumeChartView.setStyleSheet(
+                '''
+                    # border-style: solid;
+                    # border-color: white;
+                    # border-width: 2px;
+                    # border-radius: 0px;
+                    margin: 0px;
+                    padding: 0px;
+    
+                '''
+            )
+            self.__chart.setBackgroundBrush(QColor(30, 30, 30))
+            # self.__chart.setBackgroundPen(QColor(255, 255, 255))
+            # self.__chart.setPlotAreaBackgroundBrush(QColor(255, 255, 255))
+            # self.__chart.setPlotAreaBackgroundPen(QColor(255, 255, 255))
+            self.__chart.setMargins(QMargins(0, 0, 0, 0))
+            # self.__chart.setPlotArea(QRectF(0, 0, 500, 200))
+
+            self.__volumeChart.setBackgroundBrush(QColor(30, 30, 30))
+            self.__volumeChart.setMargins(QMargins(0, 0, 0, 0))
+            # self.__volumeChart.setPlotArea(QRectF(0, 0, 500, 50))
+
 
     def Draw(self):
         '''
             그릴 series name 만 받아서 그 때 그때 반영하기? ticker 자체는 멤버로 가지고 있기.
         '''
+
+        # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
+        # ticker.GetSeriesCount()
+        if self.__seriesCount == self.__ticker.GetSeriesCount():  # len(tickSeries): #self.__seriesCount
+            return
 
         # Get Datas
         tickSeries = self.__ticker.GetTickSeries()
@@ -737,19 +780,13 @@ class GeneralChartContainer(QFrame):
         ma20Series = self.__ticker.GetMA20Series()
         bollingerBandSeries = self.__ticker.GetBollingerBandSeries()
 
-        # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
-        #ticker.GetSeriesCount()
-        if self.__seriesCount == self.__ticker.GetSeriesCount(): # len(tickSeries): #self.__seriesCount
-            return
 
-        # clear all previous candles.
+        # reset.
         self.__candleSeries.clear()
-        self.__volumeSeries.clear()
         self.__ma5Series.clear()
         self.__ma20Series.clear()
-        # self.__bollingerBandSeries.()
+        self.__volumeSeries.clear()
         self.__tm = list()
-
 
         ############################################
         # redraw
@@ -769,32 +806,43 @@ class GeneralChartContainer(QFrame):
 
 
         # re-draw all candles.
-        for stamp, candle in tickSeries.items():
+        for i, (stamp, candle) in enumerate(tickSeries.items()):
+            if len(tickSeries) - self.__maxSeriesCount > i:
+                continue
             self.AppendCandle(stamp, candle)
 
-        # re-draw all volumes.
+        # re-draw all volumes. need to series clear!
         self.volSet = QBarSet('volume')
-        for stamp, vol in volumeSeries.items():
-            self.__tm.append(str(stamp))
+        for i, (stamp, vol) in enumerate(volumeSeries.items()):
+            if len(volumeSeries) - self.__maxSeriesCount > i:
+                continue
+            t = datetime.fromtimestamp(stamp)
+            t = t.strftime('%Y-%m-%d %H:%M')
+            self.__tm.append(str(t))
             self.AppendVolume(stamp, vol)
         self.__volumeSeries.append(self.volSet)
 
         # re-draw all ma5.
-        for stamp, ma in ma5Series.items():
+        for i, (stamp, ma) in enumerate(ma5Series.items()):
+            if len(ma5Series) - self.__maxSeriesCount > i:
+                continue
             self.AppendMA(stamp, ma)
 
         # re-draw all ma20.
-        for stamp, ma in ma20Series.items():
+        for i, (stamp, ma) in enumerate(ma20Series.items()):
+            if len(ma20Series) - self.__maxSeriesCount > i:
+                continue
             self.AppendMA20(stamp, ma)
 
         # re-draw bollinger band
         self.upperSeries = QLineSeries()
         self.lowerSeries = QLineSeries()
-        for stamp, bb in bollingerBandSeries.items():
+        for i, (stamp, bb) in enumerate(bollingerBandSeries.items()):
+            if len(bollingerBandSeries) - self.__maxSeriesCount > i:
+                continue
             self.AppendBollingerBand(stamp, bb)
         self.__bollingerBandSeries.setUpperSeries(self.upperSeries)
         self.__bollingerBandSeries.setLowerSeries(self.lowerSeries)
-
 
         for k, series in self.__seriesMap.items():
             self.__chart.removeSeries(series)
@@ -802,15 +850,7 @@ class GeneralChartContainer(QFrame):
         self.__volumeChart.removeSeries(self.__volumeSeries)
         self.__volumeChart.addSeries(self.__volumeSeries)
 
-        # axis
-        # axis_x = QDateTimeAxis()
-        # axis_x.setTickCount(10)
-        # axis_x.setFormat("mm:ss")
-        # self.__volumeChart.addAxis(axis_x, Qt.AlignBottom)
-        # self.__volumeSeries.attachAxis(axis_x)
-        self.__volumeChart.createDefaultAxes() # axis 가 있어야 설정할 수 있음.
-        self.__volumeChart.axisX(self.__volumeSeries).setCategories(self.__tm)
-
+        # series style setting.
         self.__chart.createDefaultAxes()
         # self.__volumeChart.createDefaultAxes()
         self.__chart.axisX(self.__candleSeries).setVisible(False)
@@ -819,6 +859,18 @@ class GeneralChartContainer(QFrame):
         self.__chart.axisX(self.__bollingerBandSeries).setVisible(False)
         self.__chart.legend().hide()
         self.__volumeChart.legend().hide()
+        # axis
+        # axis_x = QDateTimeAxis()
+        # axis_x.setTickCount(10)
+        # axis_x.setFormat("mm:ss")
+        # self.__volumeChart.addAxis(axis_x, Qt.AlignBottom)
+        # self.__volumeSeries.attachAxis(axis_x)
+        self.__chart.axisY(self.__candleSeries).setLabelsColor(QColor(255, 255, 255))
+        self.__volumeChart.createDefaultAxes()  # axis 가 있어야 설정할 수 있음.
+        self.__volumeChart.axisX(self.__volumeSeries).setCategories(self.__tm)
+        self.__volumeChart.axisX(self.__volumeSeries).setLabelsColor(QColor(255, 255, 255))
+        self.__volumeChart.axisY(self.__volumeSeries).setLabelsColor(QColor(255, 255, 255))
+        self.__volumeChart.axisX(self.__volumeSeries).setLinePenColor(QColor(255, 255, 255))
 
         self.__seriesCount += 1
 

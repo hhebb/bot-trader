@@ -1,6 +1,8 @@
 from enum import Enum
 
 FIAT_PRICE = -1
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+TIME_REPR = "yyyy-MM-dd hh:mm:ss"
 
 
 class EOrderStatus(Enum):

@@ -21,7 +21,7 @@ class RunnerWorker(QObject):
         super().__init__()
         self.__market = Market()
         self.__agent = Agent(10000)
-        self.__timestamp = datetime.datetime.strptime('2021-09-22 00:36:11', '%Y-%m-%d %H:%M:%S') # 2021-09-09 11:48:43
+        self.__timestamp = datetime.datetime.strptime('2021-09-09 11:48:43', '%Y-%m-%d %H:%M:%S') # 2021-09-09 11:48:43 # 2021-09-22 00:36:11
         self.__market.dbManager.SetCurrentDB(dbName='data')
         self.__market.dbManager.SetCurrentCollection(collectionName=str(self.__timestamp))
         self.__market.dbManager.QueryAllRows()
@@ -45,7 +45,7 @@ class RunnerWorker(QObject):
         # initial timestamp 지정해야 함.
 
         while True:
-            time.sleep(.4 * 1 / self.__simulateSpeed) #.2
+            time.sleep(1 * 1 / self.__simulateSpeed) #.2
             while self.__simulateState == SimulateState.STOP:
                 time.sleep(.001)
                 pass
