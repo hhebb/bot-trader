@@ -637,6 +637,7 @@ class GeneralChartContainer(QFrame):
     '''
         hover 이벤트 등 추가.
         MA, MACD 등 보조지표 추가.
+        각 series item 클래스 만들어서 인터페이스 통합하기!
     '''
     def __init__(self, ticker: Core.Ticker.Ticker):
         super(GeneralChartContainer, self).__init__()
@@ -793,6 +794,7 @@ class GeneralChartContainer(QFrame):
             self.AppendBollingerBand(stamp, bb)
         self.__bollingerBandSeries.setUpperSeries(self.upperSeries)
         self.__bollingerBandSeries.setLowerSeries(self.lowerSeries)
+
 
         for k, series in self.__seriesMap.items():
             self.__chart.removeSeries(series)

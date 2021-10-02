@@ -236,53 +236,27 @@ class BollingerBandSeriesObject(BaseSeriesObject):
         self._series[timestamp] = (upper, lower)
 
 
-###################################################
+class RSISeriesObject(BaseSeriesObject):
+    def __init__(self, size=14):
+        super().__init__()
+        self.__size = size
+        self.__bucket = list()
+
+    def Feed(self, **kargs):
+        timestamp = kargs['timestamp']
+        price = kargs['closePrice']
+        self.__bucket.append(price)
 
 
+        if len(self.__bucket) > self.__size:
 
-# class CandleBar:
-#     def __init__(self, timestamp: datetime.timestamp, ohlc: list):
-#         self.__timestamp = timestamp
-#         self.__open, self.__high, self.__low, self.__close = ohlc
-#
-#     def GetStamp(self):
-#         return self.__timestamp
-#
-#     def GetOHLC(self):
-#         return self.__open, self.__high, self.__low, self.__close
-#
-#
-# class VolumeBar:
-#     def __init__(self, timestamp: datetime.timestamp, amount: float):
-#         self.__timestamp = timestamp
-#         self.__amount = amount
-#
-#     def GetStamp(self):
-#         return self.__timestamp
-#
-#     def GetAmount(self):
-#         return self.__amount
-#
-#
-# class MA5Bar:
-#     def __init__(self, timestamp: datetime.timestamp, c: float):
-#         self.__timestamp = timestamp
-#         self.__price = c
-#
-#     def GetStamp(self):
-#         return self.__timestamp
-#
-#     def GetPrice(self):
-#         return self.__price
-#
-#
-# class BollingerBandBar:
-#     def __init__(self, timestamp: datetime.timestamp, c: float):
-#         self.__timestamp = timestamp
-#         self.__price = c
-#
-#     def GetStamp(self):
-#         return self.__timestamp
-#
-#     def GetPrice(self):
-#         return self.__price
+
+            self.__bucket.pop(0)
+
+        mean = np.mean(self.__bucket)
+        std = np.std(self.__bucket)
+        upper = mean + 2 * std
+        lower = mean - 2 * std
+
+        self._series[timestamp] = (upper, lower)
+

@@ -1,9 +1,13 @@
 TODO
 
-* 차트 통합 - 캔들 + 지표들 (각 차트마다 객체로 만들기.)
-* 시장 지표
-* sidebar 제작
-* 디버그
+* 차트 다듬기 - 폰트, axis 설정, 색상, 간격 등 모든 설정.
+* 현재가 표시.
+* control panel 의 데이터 선택 옵션 수정 - 올바른 데이터 파싱, 데이터 갯수,
+* orderbook bar 정리하기. - draw 어케 할지, scaling 어케 할지.
+* chart bar 갯수 제한 - pop 같은 방식으로 밀어내기.
+* side bar 제작 - control panel(초기화 기능 추가), market analysis, user analysis, 전략 설정.
+* 기존 user status container 삭제하고 side bar 로 옮기기.
+
 
 
 - 코드 리마스터 반드시 해야함 ㅠㅠ - 객체 역할, 통신, 인터페이스
@@ -11,9 +15,6 @@ TODO
 - 시작되면 비활성화 하기.
 - 초기화 버튼 추가하기.
 - candle chart redraw 할 때 성능을 위해 지우지 말고 덧그리기.
-- 기술적 분석을 위한 차트 지표 계산을 Ticker Index 모듈에 만들어 놓기.
-- 측면바 제작 - 시뮬레이션 컨트롤, DB 선택 등.
-- 시뮬 pause 는 수동 매매 진입, 시뮬 running 은 자동 매매 진입과 동시에 수동 매매 block.
 - 디자인 완성하기. css file 만들기?
 - User 통계 완성하기.
 - GUI 에 실시간 데이터 수집 모듈 통합.
