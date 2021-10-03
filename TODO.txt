@@ -6,8 +6,6 @@ TODO
 * side bar 제작 - control panel(초기화 기능 추가), market analysis, user analysis, 전략 설정.
 * 기존 user status container 삭제하고 side bar 로 옮기기.
 
-초기화 - runner 데이터 모두 초기화
-db data set
 
 
 - 코드 리마스터 반드시 해야함 ㅠㅠ - 객체 역할, 통신, 인터페이스

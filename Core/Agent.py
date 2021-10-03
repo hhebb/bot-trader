@@ -29,9 +29,9 @@ class Agent(QObject):
         self.__yield = 0
         self.__winRate = 0
 
-        self.__initializeAcount()
+        self.InitializeAcount()
 
-    def __initializeAcount(self):
+    def InitializeAcount(self):
         self.__orderId = 0
         self.__ledger['fiat'] = self.__initialAsset
         self.__history = list()

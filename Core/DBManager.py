@@ -63,6 +63,7 @@ class DBManager:
             result = self.__rows.pop(0)
         except:
             print('> No datas. Call "QueryAllRows" first.')
+            return None
         return result
 
     def QueryRow(self, timestamp):

@@ -14,7 +14,9 @@ class Market:
     '''
     def __init__(self):
         self.dbManager = DBManager()
-        self.__pairSymbol = 0
+        self.InitializeMarket()
+
+    def InitializeMarket(self):
         self.__startTime = 0
         self.__LOB_ask = OrderBook(namespace.LOBType.ASK)
         self.__LOB_bid = OrderBook(namespace.LOBType.BID)
