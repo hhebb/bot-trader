@@ -1,10 +1,9 @@
 TODO
 
-* 현재가 표시.
-* control panel 의 데이터 선택 옵션 수정 - 올바른 데이터 파싱, 데이터 갯수,
 * orderbook bar 정리하기. - draw 어케 할지, scaling 어케 할지.
 * side bar 제작 - control panel(초기화 기능 추가), market analysis, user analysis, 전략 설정.
 * 기존 user status container 삭제하고 side bar 로 옮기기.
+* simulation 종료 시 루프 그만 돌고 정지하기.
 
 
 

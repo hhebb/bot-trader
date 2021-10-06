@@ -34,6 +34,8 @@ class Ticker:
         self.__candleGap = 60
         self.__timeBucket = 0
         self.__seriesCount = 0
+        self.__lastPrice = 0
+        self.__currentPrice = 0
 
         self.__stamp = None
         self.__lastData = None
@@ -46,6 +48,11 @@ class Ticker:
         for trans in transactions:
             tick = [float(trans.price), float(trans.amount)]
             self.__buffer.append(tick)
+
+        if transactions:
+            self.__currentPrice = self.__buffer[-1][0]
+        else:
+            self.__currentPrice = self.__lastPrice
 
         if self.__timeBucket == self.__candleGap:
             # bucket time 동안 거래가 한 번도 이뤄지지 않았을 때 처리.
@@ -90,6 +97,7 @@ class Ticker:
             self.__seriesCount += 1
 
         self.__timeBucket += 1
+        self.__lastPrice = self.__currentPrice
 
     def GetDatas(self) -> dict:
         return self.__totalSeries
@@ -118,6 +126,9 @@ class Ticker:
 
     def GetSeriesCount(self):
         return self.__seriesCount
+
+    def GetCurrentPrice(self):
+        return self.__currentPrice
 
 
 #################################################

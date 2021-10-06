@@ -51,6 +51,9 @@ class DBManager:
         db = self.__conn.get_database(dbName)
         return db.list_collection_names()
 
+    def GetDataCount(self, collectionName: str) -> int:
+        return self.__db.get_collection(collectionName).count()
+
     def GetPopRow(self) -> dict:
         '''
             성능 향상을 위해 list pop.

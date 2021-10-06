@@ -192,14 +192,17 @@ class ControlContainer(QFrame):
         self.SetStyle()
 
     def InitUI(self):
-        self.__layout = QHBoxLayout()
+        self.__layout = QGridLayout()
+        self.__dbselectLabel = QLabel('DATE')
         self.__dbselectCombobox = QComboBox()
         self.__startButton = QPushButton('START')
-        self.__playButton = QPushButton('PLAY')
+        self.__playButton = QPushButton('>||')
         self.__stepButton = QPushButton('STEP')
-        self.__speedUpButton = QPushButton('UP')
-        self.__speedDownButton = QPushButton('DOWN')
-        self.__resetButton = QPushButton('RESET')
+        self.__speedUpButton = QPushButton('+')
+        self.__speedDownButton = QPushButton('-')
+        self.__resetButton = QPushButton('<-')
+        self.__totalDataLabel = QLabel('TOTAL: ')
+        self.__totalDataText = QLabel('0')
 
         self.SetCombobox()
         self.__startButton.clicked.connect(self.StartSimulation)
@@ -210,13 +213,16 @@ class ControlContainer(QFrame):
         self.__speedDownButton.clicked.connect(self.SpeedDown)
         self.__resetButton.clicked.connect(self.initializeSignal.emit)
 
-        self.__layout.addWidget(self.__dbselectCombobox)
-        self.__layout.addWidget(self.__startButton)
-        self.__layout.addWidget(self.__playButton)
-        self.__layout.addWidget(self.__stepButton)
-        self.__layout.addWidget(self.__speedUpButton)
-        self.__layout.addWidget(self.__speedDownButton)
-        self.__layout.addWidget(self.__resetButton)
+        self.__layout.addWidget(self.__dbselectLabel, 0, 0, 1, 1)
+        self.__layout.addWidget(self.__dbselectCombobox, 1, 0, 1, 1)
+        self.__layout.addWidget(self.__startButton, 1, 1, 1, 1)
+        self.__layout.addWidget(self.__playButton, 1, 2, 1, 1)
+        self.__layout.addWidget(self.__stepButton, 1, 3, 1, 1)
+        self.__layout.addWidget(self.__speedUpButton, 1, 4, 1, 1)
+        self.__layout.addWidget(self.__speedDownButton, 1, 5, 1, 1)
+        self.__layout.addWidget(self.__resetButton, 1, 6, 1, 1)
+        self.__layout.addWidget(self.__totalDataLabel, 2, 0, 1, 1)
+        self.__layout.addWidget(self.__totalDataText, 2, 1, 1, 1)
 
         self.setLayout(self.__layout)
 
@@ -240,8 +246,13 @@ class ControlContainer(QFrame):
     def ComboboxChangeHandler(self):
         self.__selectedCollection = datetime.strptime(self.__dbselectCombobox.currentText(),
                                                       '%Y-%m-%d %H:%M:%S')
+        dbm = self.__runnerWorker.GetMarket().GetDBManager()
+        self.__totalDataText.setText(str(dbm.GetDataCount(self.__dbselectCombobox.currentText())))
 
     def StartSimulation(self):
+        """
+            combobox 에서 선택된 timestamp 기준으로 DB 접근, Runner 실행.
+        """
         # 시작되면 비활성화 하기.
         self.__runnerWorker.SetStartTime(startTime=self.__selectedCollection)
         if self.__runnerWorker.GetSimulateState() == namespace.SimulateState.STOP:
@@ -689,7 +700,12 @@ class GeneralChartContainer(QFrame):
 
     def InitUI(self):
         self.__layout = QVBoxLayout()
+
+        self.__titleBar = QHBoxLayout()
         self.__title = QLabel('CANDLE CHART')
+        self.__currentPriceLabel = QLabel()
+        self.__titleBar.addWidget(self.__title)
+        self.__titleBar.addWidget(self.__currentPriceLabel)
 
         # bollinger band series
         self.__bollingerBandSeries = QAreaSeries()
@@ -737,7 +753,7 @@ class GeneralChartContainer(QFrame):
         self.__chartView.setRenderHint(QPainter.Antialiasing)
         self.__volumeChartView.setRenderHint(QPainter.Antialiasing)
 
-        self.__layout.addWidget(self.__title)
+        self.__layout.addLayout(self.__titleBar)
         self.__layout.addWidget(self.__chartView)
         self.__layout.addWidget(self.__volumeChartView)
 
@@ -748,58 +764,64 @@ class GeneralChartContainer(QFrame):
         self.setLayout(self.__layout)
 
     def SetStyle(self):
-            r, g, b = namespace.ColorCode.DARK_PANEL.value
-            self.setStyleSheet(
-                f'''
-                    background-color: rgb({str(r)}, {str(g)}, {str(b)});
-                    border-radius: 10px;
-                    margin: 5px;
-                '''
-            )
-            self.__title.setStyleSheet(
-                '''
-                    border-style: none none solid none;
-                    border-color: white;
-                    border-width: 0px;
-                    font-size: 20px;
-                    border-radius: 0px;
-                    margin: 20px 0px 20px 10px;
-                '''
-            )
-            # self.__chart.setBackgroundPen(QColor(255, 0, 0))
+        r, g, b = namespace.ColorCode.DARK_PANEL.value
+        self.setStyleSheet(
+            f'''
+                background-color: rgb({str(r)}, {str(g)}, {str(b)});
+                border-radius: 10px;
+                margin: 5px;
+            '''
+        )
+        self.__title.setStyleSheet(
+            '''
+                border-style: none none solid none;
+                border-color: white;
+                border-width: 0px;
+                font-size: 20px;
+                border-radius: 0px;
+                margin: 20px 0px 20px 10px;
+            '''
+        )
+        # self.__chart.setBackgroundPen(QColor(255, 0, 0))
 
-            self.__chartView.setStyleSheet(
-                '''
-                    # border-style: solid;
-                    # border-color: white;
-                    # border-width: 2px;
-                    # border-radius: 0px;
-                    margin: 0px;
-                    padding: 0px;
-                   
-                '''
-            )
-            self.__volumeChartView.setStyleSheet(
-                '''
-                    # border-style: solid;
-                    # border-color: white;
-                    # border-width: 2px;
-                    # border-radius: 0px;
-                    margin: 0px;
-                    padding: 0px;
-    
-                '''
-            )
-            self.__chart.setBackgroundBrush(QColor(30, 30, 30))
-            # self.__chart.setBackgroundPen(QColor(255, 255, 255))
-            # self.__chart.setPlotAreaBackgroundBrush(QColor(255, 255, 255))
-            # self.__chart.setPlotAreaBackgroundPen(QColor(255, 255, 255))
-            self.__chart.setMargins(QMargins(0, 0, 0, 0))
-            # self.__chart.setPlotArea(QRectF(0, 0, 500, 200))
+        self.__chartView.setStyleSheet(
+            '''
+                # border-style: solid;
+                # border-color: white;
+                # border-width: 2px;
+                # border-radius: 0px;
+                margin: 0px;
+                padding: 0px;
+               
+            '''
+        )
+        self.__volumeChartView.setStyleSheet(
+            '''
+                # border-style: solid;
+                # border-color: white;
+                # border-width: 2px;
+                # border-radius: 0px;
+                margin: 0px;
+                padding: 0px;
 
-            self.__volumeChart.setBackgroundBrush(QColor(30, 30, 30))
-            self.__volumeChart.setMargins(QMargins(0, 0, 0, 0))
-            # self.__volumeChart.setPlotArea(QRectF(0, 0, 500, 50))
+            '''
+        )
+        self.__currentPriceLabel.setStyleSheet(
+            '''
+                font-size: 25px;
+            '''
+        )
+
+        self.__chart.setBackgroundBrush(QColor(30, 30, 30))
+        # self.__chart.setBackgroundPen(QColor(255, 255, 255))
+        # self.__chart.setPlotAreaBackgroundBrush(QColor(255, 255, 255))
+        # self.__chart.setPlotAreaBackgroundPen(QColor(255, 255, 255))
+        self.__chart.setMargins(QMargins(0, 0, 0, 0))
+        # self.__chart.setPlotArea(QRectF(0, 0, 500, 200))
+
+        self.__volumeChart.setBackgroundBrush(QColor(30, 30, 30))
+        self.__volumeChart.setMargins(QMargins(0, 0, 0, 0))
+        # self.__volumeChart.setPlotArea(QRectF(0, 0, 500, 50))
 
     def Initialize(self):
         self.__ticker = self.__runner.GetMarket().GetTicker()
@@ -843,6 +865,7 @@ class GeneralChartContainer(QFrame):
             그릴 series name 만 받아서 그 때 그때 반영하기? ticker 자체는 멤버로 가지고 있기.
         '''
 
+        self.__currentPriceLabel.setText(str(self.__ticker.GetCurrentPrice()))
         # 매 step 마다 함수 실행은 하지만 candle 갯수가 같다면 그냥 pass 한다.
         # ticker.GetSeriesCount()
         if self.__seriesCount == self.__ticker.GetSeriesCount():  # len(tickSeries): #self.__seriesCount
@@ -1077,7 +1100,7 @@ class OrderListContainer(BaseListContainer):
         # )
 
     def Initialze(self):
-        self.__orderListWidget.clear()
+        self._listWidget.clear()
 
     def CreateHeader(self):
         self.__pairLabel = QLabel('PAIR')
@@ -1140,7 +1163,7 @@ class OrderItem(BaseListItem):
         self.setLayout(self.__layout)
 
     def SetStyle(self):
-        # super(OrderItem, self).SetStyle()
+        super(OrderItem, self).SetStyle()
 
         self.__pairLabel.setStyleSheet(
             '''
@@ -1731,7 +1754,7 @@ class Window(QFrame):
         self.__lob.Initialize()
         self.__transaction.Initialize()
         self.__chart.Initialize()
-        self.__ledger.Initialze()
+        self.__ledger.Initialize()
         self.__order.Initialze()
         self.__history.Initialize()
 
