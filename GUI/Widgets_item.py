@@ -472,33 +472,37 @@ class LOBListWidget(BaseListContainer):
             for price, order in data.items():
                 if self._listWidget.count() >= 5:
                     break
-                newItem = LOBItem(order.price, order.amount)
+                newItem = LOBItem(order.price, order.amount, Qt.blue)
                 self.InsertRow(newItem=newItem, position=0)
 
         elif self.__type.value == namespace.LOBType.BID.value:
             for price, order in reversed(data.items()):
                 if self._listWidget.count() >= 5:
                     break
-                newItem = LOBItem(order.price, order.amount)
+                newItem = LOBItem(order.price, order.amount, Qt.red)
                 self.InsertRow(newItem=newItem, position=self._listWidget.count())
 
 
 class LOBItem(BaseListItem):
-    def __init__(self, price, amount):
+    def __init__(self, price, amount, barColor):
         super(LOBItem, self).__init__()
         self.__price = price
         self.__amount = amount
+        self.__barColor = barColor
         self.InitUI()
         self.SetStyle()
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
         self.__priceLabel = QLabel(str(self.__price))
-        self.__bar = BaseBar(self.__amount)
+        self.__bar = BaseBar(self.__amount, self.__barColor)
         self.__amountLabel = QLabel(str(self.__amount))
         self.__layout.addWidget(self.__priceLabel)
         self.__layout.addWidget(self.__bar)
         self.__layout.addWidget(self.__amountLabel)
+        self.__layout.setStretch(0, 1)
+        self.__layout.setStretch(1, 10)
+        self.__layout.setStretch(2, 3)
         self.setLayout(self.__layout)
 
     def SetStyle(self):
@@ -526,10 +530,11 @@ class BaseBar(QFrame):
     '''
         LOB item 에 amount 수량 시각화하는 bar.
     '''
-    def __init__(self, amount):
+    def __init__(self, amount, color):
         super(BaseBar, self).__init__()
         self.__amount = amount
         self.InitUI()
+        self.__color = color
 
     def InitUI(self):
         self.__layout = QHBoxLayout()
@@ -544,7 +549,7 @@ class BaseBar(QFrame):
 
     def Draw(self, event, qp, w):
         qp.setPen(QtGui.QColor(200, 100, 3))
-        qp.setBrush(QBrush(Qt.red, Qt.SolidPattern))
+        qp.setBrush(QBrush(self.__color, Qt.SolidPattern))
         qp.drawRect(0, 0, w, 100) # x y w h
 
 

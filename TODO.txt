@@ -1,10 +1,9 @@
 TODO
 
-* orderbook bar 정리하기. - draw 어케 할지, scaling 어케 할지.
+* 데이터 파싱 최대한 정확하게 모니터링 하기.!!!!
 * side bar 제작 - control panel(초기화 기능 추가), market analysis, user analysis, 전략 설정.
 * 기존 user status container 삭제하고 side bar 로 옮기기.
 * simulation 종료 시 루프 그만 돌고 정지하기.
-
 
 
 - 코드 리마스터 반드시 해야함 ㅠㅠ - 객체 역할, 통신, 인터페이스
