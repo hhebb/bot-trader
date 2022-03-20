@@ -17,3 +17,5 @@
 
 ## In Progress
 ![app](images/gui_1.png)
+
+![animation](images/ani.gif)
